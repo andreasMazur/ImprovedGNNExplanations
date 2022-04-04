@@ -6,6 +6,14 @@ Naively using explanations given by Zorro [1] results in bad explanations becaus
 
 ![](https://github.com/andreasMazur/RefinedGNNExplanations/blob/main/Experiment.gif)
 
+# Install
+
+This experiment was conducted with Python3.9. Further, install the requirements:
+
+```pip install -r requirements.txt```
+
+If you want to repeat the experiment yourself, then you need to execute the `experiment.py`-script in the repository's root directory.
+
 # References
 
 [1] Funke, Thorben, Megha Khosla, and Avishek Anand. "Hard masking for explaining graph neural networks." (2020).
