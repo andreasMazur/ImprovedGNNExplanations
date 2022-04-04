@@ -1,4 +1,4 @@
-# LearningGNNExplanations
+# Refined Zorro Explanations for Graph Neural Networks
 
 This repository contains the code for a project that belongs to the area of computing explanations for graph neural networks. I analyse and refine explanations for predictions from a deep Q-learning agent in the Taxi-v3 environment [2]. To be able to use this environment for my research topic, I convert the default integer observations to graph observations. This yields sparse feature matrices. 
 
