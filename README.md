@@ -4,6 +4,7 @@ This repository contains the code for a project that belongs to the area of comp
 
 Naively using explanations given by Zorro [1] results in bad explanations because of the sparsity of the data. That is why I extend the deep Q-network with an explanation branch. I train the explanation branch while freezing all other weights by minimizing a fidelity value comparable to the widely known Fidelty-Minus evaluation metric. The size of the output of the explanation branch equals the size of the graph observation. However, this embedding is not sparse. Therefor, I am able to use Zorro in an improved way compared to naively applying it to the original graph observation.
 
+![](https://github.com/andreasMazur/RefinedGNNExplanations/blob/main/Experiment.gif)
 
 # References
 
