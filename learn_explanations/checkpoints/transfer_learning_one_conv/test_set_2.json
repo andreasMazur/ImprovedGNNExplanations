@@ -1,0 +1,11 @@
+{
+    "batch_size": 64,
+    "dense_layers": [],
+    "fidelity_fifty_percent": 0.001,
+    "graph_layers": [
+        64
+    ],
+    "learning_rate": 1e-05,
+    "name": "test_set_2",
+    "seed": 123
+}

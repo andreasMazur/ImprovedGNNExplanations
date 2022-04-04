@@ -1,40 +1,81 @@
+from double_q_learning.preprocessing import AMT_NODES, ADJ_MATRIX_SPARSE, FEATURE_DIM
+
 import tensorflow as tf
+import numpy as np
+import random
 
 
-def explainer_train_step(feature_m, adj_m, batch_size, model, explainer):
-    """Training step function for explainer networks
+def epsilon_greedy_strategy(q_network, epsilon, state, action_space=6):
+    """Epsilon-greedy strategy
 
-    :param feature_m: Feature matrices of the observation
-    :param adj_m: Adjacency matrices of the observation
-    :param batch_size: Amount of training samples to be used during one training step
-    :param model: The model to be explained
-    :param explainer: The model to train
-    :return: The loss of the training step (Fidelity^-)
+    Returns a random action with the probability 'epsilon'.
+
+    :param state: The state for which an actions shall be predicted
+    :param epsilon: The current epsilon value
+    :param q_network: The q-network used to predict actions
+    :param action_space: Amount of possible actions to choose from
+    :return: An action
+    """
+    if np.random.random() > epsilon:
+        state = tf.reshape(state, (1,) + state.shape)
+        q_values, _ = q_network((state, ADJ_MATRIX_SPARSE))
+        q_values = q_values[0]
+        return np.argmax(q_values)
+    else:
+        return np.random.randint(0, action_space)
+
+
+def explanation_gradient(states,
+                         fidelity_reg,
+                         model):
+    """Explanation assisted experience replay for double q-learning.
+
+    :param fidelity_reg:
+    :param states:
+    :param model:
+    :return:
     """
 
-    # Predict actions (for which an explanation shall be computed)
-    q_values = model((feature_m, adj_m))
-    indices = tf.cast(tf.argmax(q_values, axis=1), tf.int32)
-    indices = tf.stack([tf.range(batch_size), indices], axis=1)
-
     with tf.GradientTape() as tape:
+        #################################
+        # EXPLANATION LOSS (Fidelity)
+        #################################
+        q_values, explanation = model((states, ADJ_MATRIX_SPARSE))
+        explanation_q_values, _ = model((explanation, ADJ_MATRIX_SPARSE))
+        fidelity = model.loss["mse"](q_values, explanation_q_values)
+        fidelity_loss = fidelity_reg * fidelity
 
-        # Predict mask
-        mask = explainer((feature_m, adj_m))
-
-        # Mask the original feature matrices
-        masked_feature_m = tf.math.multiply(feature_m, mask)
-
-        # Predict masked features
-        noisy_q_values = model((masked_feature_m, adj_m))
-
-        q_values = tf.gather_nd(q_values, indices)
-        noisy_q_values = tf.gather_nd(noisy_q_values, indices)
-
-        # Compute fidelity minus between original- and masked matrices prediction
-        fidelity_minus = explainer.loss["masked_q_values_loss"](q_values, noisy_q_values)
-
-    grads = tape.gradient(fidelity_minus, model.trainable_weights)
+    grads = tape.gradient(fidelity_loss, model.trainable_weights)
     model.optimizer.apply_gradients(zip(grads, model.trainable_weights))
 
-    return fidelity_minus
+    return {"fidelity": fidelity}
+
+
+def explanation_train_step(replay_memory,
+                           batch_size,
+                           fidelity_reg,
+                           model,
+                           trace=None):
+    """One training step 'double experience replay'."""
+
+    # Sample experiences
+    mini_batch = np.array(random.sample(replay_memory, batch_size), np.float32)
+
+    # Convert data to tensors
+    states = tf.constant(mini_batch)
+    fidelity_reg = tf.constant(fidelity_reg)
+
+    # loss = explanation_gradient(states, fidelity_reg, model)
+
+    # Train network
+    if trace is None:
+        trace = tf.function(explanation_gradient).get_concrete_function(
+            tf.TensorSpec([None, AMT_NODES, FEATURE_DIM], dtype=tf.float32),  # states
+            tf.TensorSpec((), dtype=tf.float32),  # fidelity regularization factor
+            model
+        )
+        loss = trace(states, fidelity_reg)
+    else:
+        loss = trace(states, fidelity_reg)
+
+    return loss, trace

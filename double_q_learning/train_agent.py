@@ -2,8 +2,8 @@ from collections import deque
 
 from double_q_learning.advanced_taxi_env import AdvancedTaxiEnv
 from double_q_learning.experience_replay import train_step
-from double_q_learning.neural_networks import deep_q_network
-from double_q_learning.preprocessing import ADJ_MATRIX
+from double_q_learning.neural_networks import deep_q_network, deep_q_network
+from double_q_learning.preprocessing import ADJ_MATRIX, ADJ_MATRIX_SPARSE
 from double_q_learning.utils import plot_stats
 
 import tensorflow as tf
@@ -44,16 +44,15 @@ def epsilon_greedy_strategy(q_network, epsilon, state, action_space=6):
     """
     if np.random.random() > epsilon:
         state = tf.reshape(state, (1,) + state.shape)
-        q_values = q_network((state, ADJ_MATRIX))[0]
+        q_values = q_network((state, ADJ_MATRIX_SPARSE))
         if tf.rank(q_values) == 2:
             q_values = q_values[0]
-
         return np.argmax(q_values)
     else:
         return np.random.randint(0, action_space)
 
 
-def train(model_name="rl_agent",
+def train(model_name="rl_agent_6",
           learning_rate=.001,
           discount_factor=.95,
           batch_size=64,
@@ -62,7 +61,7 @@ def train(model_name="rl_agent",
           graph_layers=None,
           dense_layers=None,
           INITIAL_REPLAY_MEM_LENGTH=1_000,
-          TARGET_PERFORMANCE=25):
+          TARGET_PERFORMANCE=20):
     """The training procedure for the RL-agent (meta function for double Q-learning)
 
     :param model_name: The name under which the agent shall be stored
@@ -84,7 +83,7 @@ def train(model_name="rl_agent",
         dense_layers = []
 
     if graph_layers is None:
-        graph_layers = [64]
+        graph_layers = [128]
 
     #########
     # Setup
@@ -106,15 +105,13 @@ def train(model_name="rl_agent",
     env.seed(123)
     replay_memory = deque(maxlen=250_000)
     model = deep_q_network(
-        learning_rate,
-        graph_layers,
-        dense_layers
+        lr=h_set["learning_rate"],
+        graph_layers=h_set["graph_layers"]
     )
     model.summary()
     target_model = deep_q_network(
-        learning_rate,
-        graph_layers,
-        dense_layers
+        lr=h_set["learning_rate"],
+        graph_layers=h_set["graph_layers"]
     )
     target_model.set_weights(model.get_weights())
 
@@ -122,13 +119,14 @@ def train(model_name="rl_agent",
     performance = 200
     episode_num = -1
     training_step = 0
-    win_size = 100
+    win_size = 1_000
     episode_steps_mem = []
     episode_steps_window = deque(maxlen=win_size)
     episode_rewards_mem = []
     episode_rewards_window = deque(maxlen=win_size)
     avg_batch_losses_mem = []
     avg_batch_losses = deque(maxlen=win_size)
+    avg_episode_steps_mem = []
     epsilon_mem = []
     target_updates = []
     trace = None
@@ -150,11 +148,9 @@ def train(model_name="rl_agent",
             replay_memory.append(
                 (
                     state,
-                    ADJ_MATRIX,
                     tf.constant(action),
                     tf.constant(reward),
                     next_state,
-                    ADJ_MATRIX,
                     tf.constant(done)
                 )
             )
@@ -189,11 +185,9 @@ def train(model_name="rl_agent",
             replay_memory.append(
                 (
                     state,
-                    ADJ_MATRIX,
                     tf.constant(action),
                     tf.constant(reward),
                     next_state,
-                    ADJ_MATRIX,
                     tf.constant(done)
                 )
             )
@@ -233,8 +227,35 @@ def train(model_name="rl_agent",
         avg_batch_losses_mem.append(episode_loss)
 
         performance = np.mean(episode_steps_window)
+        avg_episode_steps_mem.append(performance)
 
         epsilon_mem.append(epsilon)
+
+        if episode_num % 250 == 0 and episode_num > 0:
+            # Save model weights
+            model.save_weights(f"./checkpoints/{model_name}")
+
+            # Plot statistics
+            if update_target < 600:
+                temp_target_updates = None
+            else:
+                temp_target_updates = target_updates.copy()
+            plot_stats(
+                file_name=f"{model_name}_plot",
+                path=f"./checkpoints",
+                exploration_rate=epsilon_mem,
+                target_updates_=temp_target_updates,
+                episode_steps=episode_steps_mem,
+                performance=avg_episode_steps_mem,
+                episode_rewards=episode_rewards_mem,
+                avg_losses=avg_batch_losses_mem,
+            )
+
+            # Store hyper parameter
+            with open(f"./checkpoints/{model_name}.json", "w") as f:
+                json.dump(h_set, f, indent=4, sort_keys=True)
+
+            tf.keras.backend.clear_session()
 
     # Save model weights
     model.save_weights(f"./checkpoints/{model_name}")
@@ -248,6 +269,7 @@ def train(model_name="rl_agent",
         exploration_rate=epsilon_mem,
         target_updates_=target_updates,
         episode_steps=episode_steps_mem,
+        performance=avg_episode_steps_mem,
         episode_rewards=episode_rewards_mem,
         avg_losses=avg_batch_losses_mem,
     )

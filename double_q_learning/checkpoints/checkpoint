@@ -1,2 +1,2 @@
-model_checkpoint_path: "rl_agent"
-all_model_checkpoint_paths: "rl_agent"
+model_checkpoint_path: "TEST_EXPL_MODEL"
+all_model_checkpoint_paths: "TEST_EXPL_MODEL"
