@@ -1,13 +1,13 @@
+from double_q_learning.advanced_taxi_env import AdvancedTaxiEnv
+from double_q_learning.neural_networks import load_agent
+from double_q_learning.preprocessing import ADJ_MATRIX_SPARSE, draw_discrete_graph
+from zorro_algorithm.zorro import zorro_wrapper
+
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
 import logging
 
-from double_q_learning.advanced_taxi_env import AdvancedTaxiEnv
-from double_q_learning.neural_networks import load_agent
-from double_q_learning.preprocessing import ADJ_MATRIX_SPARSE, draw_discrete_graph
-from zorro_algorithm.zorro import zorro_wrapper
-from zorro_algorithm.zorro_utils import mean_squared_error
 
 if __name__ == "__main__":
     """Simple function to test the Zorro algorithm."""
@@ -18,12 +18,14 @@ if __name__ == "__main__":
     h_set = {
         "learning_rate": [.001],
         "batch_size": [64],
-        "graph_layers": [128],  # depends on what model you retrain
+        "graph_layers": [256],  # depends on what model you retrain
         "expl_graph_layers": [128],
         "fidelity_reg": [.001]
     }
-    model = load_agent("../double_q_learning/checkpoints/rl_agent_6", h_set)
-    model.load_weights("../learn_explanations/checkpoints/test_set_1")
+    model = load_agent("../double_q_learning/checkpoints/rl_agent_8", h_set)
+    model.load_weights("../learn_explanations/checkpoints/test_set_2")
+
+    fidelity_memory = []
 
     # Load environment
     env = AdvancedTaxiEnv()
@@ -45,13 +47,11 @@ if __name__ == "__main__":
             action = np.argmax(q_values[0])
 
             # Compute explanation with zorro
-            zorro_expl, action_zo, q_values_zo = zorro_wrapper(
-                model, state, ADJ_MATRIX_SPARSE, action
-            )
-            fid = mean_squared_error(q_values, q_values_zo)
+            zorro_expl, action_zo, fid = zorro_wrapper(model, state, state)
+            fidelity_memory.append(fid)
 
             # Draw the explanation graph
-            fig, _ = plt.subplots(1, 2, figsize=(10, 5))
+            fig, _ = plt.subplots(1, 2, figsize=(7, 3.5))
             fig.tight_layout()
 
             plt.subplot(121)
@@ -69,3 +69,13 @@ if __name__ == "__main__":
 
             # Next env step
             state, reward, done, info = env.step(action)
+
+        plt.figure(figsize=(7, 3.5))
+        plt.title("Fidelity Values")
+        plt.ylabel("Step Fidelity")
+        plt.xlabel("Episode Step")
+        plt.plot(fidelity_memory)
+        plt.grid()
+        plt.legend()
+        plt.savefig(f"./explanations/fidelities.svg", format="svg")
+        plt.show()

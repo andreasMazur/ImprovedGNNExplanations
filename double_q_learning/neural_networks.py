@@ -1,9 +1,9 @@
 from keras.layers import Activation
-from tensorflow.keras.layers import Layer, Dense, Input, Reshape, Softmax
+from tensorflow.keras.layers import Dense, Input, Reshape
 from tensorflow.keras.optimizers import Adam
 from spektral.layers import GeneralConv, DiffPool
 
-from double_q_learning.preprocessing import AMT_NODES, FEATURE_DIM, ADJ_MATRIX, ADJ_MATRIX_SPARSE
+from double_q_learning.preprocessing import AMT_NODES, FEATURE_DIM, ADJ_MATRIX_SPARSE
 
 import tensorflow as tf
 
@@ -34,7 +34,7 @@ def explainer_network(lr, graph_layers, amt_nodes=AMT_NODES, feature_dim=FEATURE
         batch_norm=False,
         activation="prelu",
         aggregate="sum",
-        name="explanation"
+        name="proxy_input"
     )([node_f, adj_matrix])
 
     # explanation = Softmax()(explanation)
@@ -78,11 +78,15 @@ def deep_q_network(lr, graph_layers, amt_actions=6):
                 batch_norm=False,
                 activation="prelu",
                 aggregate="sum",
-                name="feature_embedding"
+                name=f"feature_embedding"
             )([node_f, adj_matrix_in])
         else:
             node_f = GeneralConv(
-                channels=gl, dropout=0.0, batch_norm=False, activation="prelu", aggregate="sum"
+                channels=gl,
+                dropout=0.0,
+                batch_norm=False,
+                activation="prelu",
+                aggregate="sum"
             )([node_f, adj_matrix_in])
 
     #####################
@@ -166,7 +170,7 @@ if __name__ == "__main__":
     test_input = tf.random.normal((64, AMT_NODES, FEATURE_DIM))
     model_1 = deep_q_network(.001, [64], 6)
     model_1.summary()
-    tf.keras.utils.plot_model(model_1, "../deep_q_network.png")
+    tf.keras.utils.plot_model(model_1, "../deep_q_network.svg", dpi=None, rankdir="LR")
     q_values_ = model_1((test_input, ADJ_MATRIX_SPARSE))
     print(f"Q-values shape: {tf.shape(q_values_)}")
     model_1.save_weights("./checkpoints/TEST_MODEL")
@@ -192,7 +196,7 @@ if __name__ == "__main__":
         feature_dim=feature_dim_
     )
     model_2.summary()
-    tf.keras.utils.plot_model(model_2, "../explainer_network.png")
+    tf.keras.utils.plot_model(model_2, "../explainer_network.svg", dpi=None, rankdir="LR")
     explanation_ = model_2((test_input_2, ADJ_MATRIX_SPARSE))
     print(f"Explanation shape: {tf.shape(explanation_)}")
 
@@ -201,7 +205,7 @@ if __name__ == "__main__":
     ###################
     model_3 = load_agent("./checkpoints/TEST_MODEL", h_set_)
     model_3.summary()
-    tf.keras.utils.plot_model(model_3, "../load_agent.png")
+    tf.keras.utils.plot_model(model_3, "../load_agent.svg", dpi=None, rankdir="LR")
     q_values_, explanation_ = model_3((test_input, ADJ_MATRIX_SPARSE))
     print(f"Q-values shape: {tf.shape(q_values_)}; Explanation shape: {tf.shape(explanation_)}")
     model_3.save_weights("./checkpoints/TEST_EXPL_MODEL")

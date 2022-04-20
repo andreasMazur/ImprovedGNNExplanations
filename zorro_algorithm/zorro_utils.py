@@ -5,11 +5,46 @@ import tensorflow as tf
 import numpy as np
 
 
-def get_best_explanation(masks, model_, X, target_action):
+def get_best_explanation(masks, model_, to_mask, original_input):
     """Choose the best mask from all given masks."""
-    chosen_mask, action, q_values = None, None, None
+    if len(to_mask.shape) == 3:
+        to_mask = to_mask[0]
+    if len(original_input.shape) == 3:
+        original_input = original_input[0]
+    chosen_explanation, chosen_action, chosen_q_values, best_fidelity = None, None, None, np.inf
+    q_values, _ = model_((tf.expand_dims(original_input, axis=0), ADJ_MATRIX_SPARSE))
+    action = np.argmax(q_values[0])
+    for (V_s, F_s, _) in masks:
+        if len(V_s) == 0 or len(F_s) == 0:
+            continue
+        # Compute explanation
+        mask = create_mask(V_s, F_s)
+        explanation = tf.cast(to_mask * mask, tf.float32)
+
+        # Compute model's response for given explanation
+        mask_q_values, _ = model_((tf.expand_dims(explanation, axis=0), ADJ_MATRIX_SPARSE))
+        mask_action = np.argmax(mask_q_values[0])
+        mask_fidelity = mean_squared_error(q_values, mask_q_values)
+
+        if chosen_action == action:
+            # If currently chosen action is the target action, only update when mask action
+            # also equals target action.
+            if mask_action == action and mask_fidelity > best_fidelity:
+                chosen_explanation = explanation
+                chosen_action = mask_action
+                best_fidelity = mask_fidelity
+        elif mask_fidelity < best_fidelity:
+            chosen_explanation = explanation
+            chosen_action = mask_action
+            best_fidelity = mask_fidelity
+
+    return chosen_explanation, chosen_action, best_fidelity
+
+
+def get_best_explanation_old(masks, model_, X, target_action):
+    """Choose the best mask from all given masks."""
+    chosen_mask, chosen_action, chosen_q_values = None, None, None
     best_fidelity = -np.inf
-    best_fidelity_has_correct_action = False
     for (V_s, F_s, mask_fidelity) in masks:
 
         mask = create_mask(V_s, F_s)
@@ -22,26 +57,23 @@ def get_best_explanation(masks, model_, X, target_action):
         q_values = q_values[0]
         action = np.argmax(q_values)
 
-        if mask_fidelity > best_fidelity and best_fidelity_has_correct_action:
-            if action == target_action:
-                best_fidelity_has_correct_action = True
-                best_fidelity = mask_fidelity
-                chosen_mask = explanation
-        elif mask_fidelity > best_fidelity:
+        if chosen_action == target_action and action == target_action \
+                and mask_fidelity > best_fidelity:
             best_fidelity = mask_fidelity
             chosen_mask = explanation
-
-    # best_fidelity = -np.inf
-    # chosen_mask = None
-    # for (V_s, F_s, mask_fidelity) in masks:
-    #     if mask_fidelity > best_fidelity:
-    #         chosen_mask = (V_s, F_s)
+            chosen_action = action
+            chosen_q_values = q_values
+        elif mask_fidelity > best_fidelity and chosen_action != target_action:
+            best_fidelity = mask_fidelity
+            chosen_mask = explanation
+            chosen_action = action
+            chosen_q_values = q_values
 
     assert chosen_mask is not None, "No masks given!"
-    assert action is not None, "No masks given!"
-    assert q_values is not None, "No masks given!"
+    assert chosen_action is not None, "No masks given!"
+    assert chosen_q_values is not None, "No masks given!"
 
-    return chosen_mask, action, q_values
+    return chosen_mask, chosen_action, chosen_q_values
 
 
 def create_mask(V_s, F_s):
@@ -54,7 +86,7 @@ def create_mask(V_s, F_s):
     return mask
 
 
-def compute_fidelity(gnn, X, A, V_s, F_s, samples=250):
+def compute_fidelity(gnn, X, A, V_s, F_s, samples=300):
     """Computes the fidelity."""
 
     # Original prediction for X

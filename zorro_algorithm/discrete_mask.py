@@ -75,25 +75,35 @@ class DiscreteMask:
         """
 
         if nodes_ranking.shape[0] == 0:
-            best_feature, best_feature_fid = features_ranking[
-                np.argmax(features_ranking, axis=0)[1]
-            ]
+            all_fidelities_equal = np.all(features_ranking[:, 1] == features_ranking[0, 1])
+            if all_fidelities_equal:
+                random_idx = np.random.randint(features_ranking.shape[0])
+                best_feature, best_feature_fid = features_ranking[random_idx]
+            else:
+                best_feature, best_feature_fid = features_ranking[
+                    np.argmax(features_ranking, axis=0)[1]
+                ]
             best_feature = best_feature.astype(np.int32)
             self.F_s.add(best_feature)
             self.F_r.discard(best_feature)
-            return len(self.F_r) > 1
+            return len(self.F_r) > 1 and len(self.V_s) > 0
         elif features_ranking.shape[0] == 0:
-            best_node, best_node_fid = nodes_ranking[np.argmax(nodes_ranking, axis=0)[1]]
+            all_fidelities_equal = np.all(nodes_ranking[:, 1] == nodes_ranking[0, 1])
+            if all_fidelities_equal:
+                random_idx = np.random.randint(nodes_ranking.shape[0])
+                best_node, best_node_fid = nodes_ranking[random_idx]
+            else:
+                best_node, best_node_fid = nodes_ranking[np.argmax(nodes_ranking, axis=0)[1]]
             best_node = best_node.astype(np.int32)
             self.V_s.add(best_node)
             self.V_r.discard(best_node)
-            return len(self.V_r) > 1
+            return len(self.V_r) > 1 and len(self.F_s) > 0
 
         best_node, best_node_fid = nodes_ranking[np.argmax(nodes_ranking, axis=0)[1]]
         best_node = best_node.astype(np.int32)
         best_feature, best_feature_fid = features_ranking[np.argmax(features_ranking, axis=0)[1]]
         best_feature = best_feature.astype(np.int32)
-        if best_node_fid < best_feature_fid:
+        if best_node_fid <= best_feature_fid:
             self.F_s.add(best_feature)
             self.F_r.discard(best_feature)
         else:

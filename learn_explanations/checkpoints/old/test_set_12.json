@@ -1,7 +1,0 @@
-{
-    "graph_layers": [
-        64
-    ],
-    "learning_rate": 1e-05,
-    "name": "test_set_12"
-}

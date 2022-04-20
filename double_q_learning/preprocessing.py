@@ -31,86 +31,18 @@ ADJ_MATRIX = tf.cast(ADJ_MATRIX, tf.float32)
 ADJ_MATRIX_SPARSE = tf.sparse.from_dense(ADJ_MATRIX)
 FEATURE_DIM = 4  # previously 10
 
-
-def preprocess_old(env_, observation, return_tf_tensor=True):
-    """[DEPRECATED] Computes the node-features matrix.
-
-    The node-features matrix contains one hot vectors (see implementation).
-
-    Note: The size of the grid and the obstacles within never change.
-          That is, we only need to compute the node-features matrix for each
-          observation.
-
-    :param env_: The Taxi-V3 environment.
-    :param observation: The observation that shall be converted into a graph.
-    :param return_tf_tensor: If False, numpy array is returned instead.
-    :return: The node-features matrix for the given observation.
-    """
-
-    taxi_row, taxi_col, pass_loc_raw, dest_idx = env_.decode(observation)
-    taxi_loc = taxi_row * 5 + taxi_col
-
-    if pass_loc_raw == 0:  # Red (0, 0)
-        pass_loc = 0
-    elif pass_loc_raw == 1:  # Green (0, 4)
-        pass_loc = 4
-    elif pass_loc_raw == 2:  # Yellow (4, 0)
-        pass_loc = 20
-    elif pass_loc_raw == 3:  # Blue (4, 3)
-        pass_loc = 23
-    else:  # In taxi
-        pass_loc = taxi_loc
-
-    if dest_idx == 0:  # Red
-        dest_idx = 0
-    elif dest_idx == 1:  # Green
-        dest_idx = 4
-    elif dest_idx == 2:  # Yellow
-        dest_idx = 20
-    else:  # Blue
-        dest_idx = 23
-
-    node_features_matrix = np.zeros((AMT_NODES, FEATURE_DIM))
-    node_features_matrix[:, 0] = 1
-
-    # All entities on one field
-    if taxi_loc == pass_loc == dest_idx:
-        if pass_loc_raw == 4:
-            node_features_matrix[taxi_loc] = [0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
-        else:
-            node_features_matrix[taxi_loc] = [0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
-
-    # Not all entities on one field
-    else:
-        node_features_matrix[taxi_loc] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
-
-        # Passenger on the same field as taxi
-        if pass_loc == taxi_loc:
-            if pass_loc_raw == 4:
-                node_features_matrix[pass_loc] = [0, 0, 0, 0, 0, 0, 1, 0, 0, 0]
-            else:
-                node_features_matrix[pass_loc] = [0, 0, 0, 0, 0, 1, 0, 0, 0, 0]
-
-        # Passenger on the same field as destination [Will never be the case]
-        elif pass_loc == dest_idx:
-            node_features_matrix[pass_loc] = [0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
-
-        # Passenger alone
-        else:
-            node_features_matrix[pass_loc] = [0, 0, 0, 0, 0, 0, 0, 0, 1, 0]
-
-        # Destination on the same field as taxi
-        if dest_idx == taxi_loc:
-            node_features_matrix[dest_idx] = [0, 0, 0, 0, 1, 0, 0, 0, 0, 0]
-
-        # Destination alone
-        else:
-            node_features_matrix[dest_idx] = [0, 0, 0, 0, 0, 0, 0, 1, 0, 0]
-
-    if return_tf_tensor:
-        return tf.constant(node_features_matrix)
-    else:
-        return node_features_matrix
+#########################
+# NODE FEATURE ENCODINGS
+#########################
+taxi_alone = [1, 0, 0, 0]
+passenger_alone = [0, 1, 0, 0]
+dest_alone = [0, 0, 1, 0]
+passenger_taxi = [1, 1, 0, 0]
+passenger_taxi_pipcked = [0, 0, 0, 1]
+passenger_dest = [0, 1, 1, 0]
+taxi_dest = [1, 0, 1, 0]
+taxi_passenger_dest = [1, 1, 1, 0]
+taxi_passenger_dest_picked = [0, 0, 1, 1]
 
 
 def preprocess(env_, observation, return_tf_tensor=True):
@@ -162,36 +94,36 @@ def preprocess(env_, observation, return_tf_tensor=True):
     # All entities on one field
     if taxi_loc == pass_loc == dest_idx:
         if pass_loc_raw == 4:
-            node_features_matrix[taxi_loc] = [1, 1, 1, 1]
+            node_features_matrix[taxi_loc] = taxi_passenger_dest_picked
         else:
-            node_features_matrix[taxi_loc] = [1, 1, 1, 0]
+            node_features_matrix[taxi_loc] = taxi_passenger_dest
 
     # Not all entities on one field
     else:
-        node_features_matrix[taxi_loc] = [1, 0, 0, 0]
+        node_features_matrix[taxi_loc] = taxi_alone
 
         # Passenger on the same field as taxi
         if pass_loc == taxi_loc:
             if pass_loc_raw == 4:
-                node_features_matrix[pass_loc] = [1, 1, 0, 1]
+                node_features_matrix[pass_loc] = passenger_taxi_pipcked
             else:
-                node_features_matrix[pass_loc] = [1, 1, 0, 0]
+                node_features_matrix[pass_loc] = passenger_taxi
 
         # Passenger on the same field as destination [Will never be the case]
         elif pass_loc == dest_idx:
-            node_features_matrix[pass_loc] = [0, 1, 1, 0]
+            node_features_matrix[pass_loc] = passenger_dest
 
         # Passenger alone
         else:
-            node_features_matrix[pass_loc] = [0, 1, 0, 0]
+            node_features_matrix[pass_loc] = passenger_alone
 
         # Destination on the same field as taxi
         if dest_idx == taxi_loc:
-            node_features_matrix[dest_idx] = [1, 0, 1, 0]
+            node_features_matrix[dest_idx] = taxi_dest
 
         # Destination alone
         else:
-            node_features_matrix[dest_idx] = [0, 0, 1, 0]
+            node_features_matrix[dest_idx] = dest_alone
 
     if return_tf_tensor:
         return tf.constant(node_features_matrix)
@@ -203,21 +135,21 @@ def colorize(graph):
     """Computes a color map for a graph."""
     color_map_ = []
     for node_ in graph.nodes.data():
-        if np.array_equal(node_[1]["feature_vec"], [1, 1, 0, 1]):  # Pass on taxi picked
+        if np.array_equal(node_[1]["feature_vec"], passenger_taxi_pipcked):
             color_map_.append("green")
-        elif np.array_equal(node_[1]["feature_vec"], [1, 1, 1, 1]):  # Pass on dest not dropped
+        elif np.array_equal(node_[1]["feature_vec"], taxi_passenger_dest_picked):
             color_map_.append("black")
-        elif np.array_equal(node_[1]["feature_vec"], [1, 1, 1, 0]):  # Pass on dest dropped
+        elif np.array_equal(node_[1]["feature_vec"], taxi_passenger_dest):
             color_map_.append("white")
-        elif np.array_equal(node_[1]["feature_vec"], [1, 0, 0, 0]):  # taxi_loc
+        elif np.array_equal(node_[1]["feature_vec"], taxi_alone):
             color_map_.append("yellow")
-        elif np.array_equal(node_[1]["feature_vec"], [1, 0, 1, 0]):  # Taxi on dest (w/o pass)
+        elif np.array_equal(node_[1]["feature_vec"], taxi_dest):
             color_map_.append("cyan")
-        elif np.array_equal(node_[1]["feature_vec"], [0, 0, 1, 0]):  # dest_loc
+        elif np.array_equal(node_[1]["feature_vec"], dest_alone):
             color_map_.append("purple")
-        elif np.array_equal(node_[1]["feature_vec"], [0, 1, 0, 0]):  # pass_loc
+        elif np.array_equal(node_[1]["feature_vec"], passenger_alone):
             color_map_.append("blue")
-        elif np.array_equal(node_[1]["feature_vec"], [1, 1, 0, 0]):  # Pass on taxi not picked
+        elif np.array_equal(node_[1]["feature_vec"], passenger_taxi):
             color_map_.append("orange")
         elif np.array_equal(node_[1]["feature_vec"], [0, 0, 0, 0]):  # empty location
             color_map_.append("grey")
@@ -251,20 +183,33 @@ def draw_heat_graph(explanation, fid=None, action_=None, title=None, show=True):
         explanation = explanation[0]
     if isinstance(explanation, tf.Tensor):
         explanation = explanation.numpy()
-    explanation = np.linalg.norm(explanation, axis=-1)
+    # explanation = np.linalg.norm(explanation, axis=-1)
+
+    # Normalize feature vectors
+    divisor = np.linalg.norm(explanation, axis=-1)
+    divisor[divisor == 0.] = 1.  # don't divide through zero
+    explanation = (explanation.T / divisor).T
+    # Clip alpha values in range [0.5, 1]
+    explanation[:, 3] = 1/2 * explanation[:, 3] + 0.5  # alpha value
+
+    # node_color = explanation[:, :3]  # nodes have always max alpha value
+    # edge_color = np.ones_like(explanation) - explanation  # inverse color
+    # edge_color[:, 3] = explanation[:, 3]  # alpha value for edges
 
     # Draw graph
-    cmap = plt.cm.Reds
+    # cmap = plt.cm.Reds
     nx.draw_networkx(
         nx_graph,
         pos={node_key: node_attr["pos"] for node_key, node_attr in nx_graph.nodes.data()},
         node_color=explanation,
-        cmap=cmap
+        # edgecolors=edge_color,
+        font_color="white"
+        # cmap=cmap
     )
-    sm = plt.cm.ScalarMappable(
-        cmap=cmap, norm=plt.Normalize(vmin=explanation.min(), vmax=explanation.max())
-    )
-    plt.colorbar(sm)
+    # sm = plt.cm.ScalarMappable(
+    #     cmap=cmap, norm=plt.Normalize(vmin=explanation.min(), vmax=explanation.max())
+    # )
+    # plt.colorbar(sm)
 
     if fid is not None:
         plt.ylabel(f"Fidelity: {fid:.3f}")

@@ -68,7 +68,7 @@ def grid_search(INITIAL_REPLAY_MEM_LENGTH=1_000,
     h_sets = create_h_sets(
         learning_rates=[.001],
         batch_sizes=[64],
-        graph_layers=[[128]],  # depends on what model you retrain
+        graph_layers=[[256]],  # depends on what model you retrain
         expl_graph_layers=[[128], [128, 128]],
         fidelity_reg=[.001, 1., .01]
     )
@@ -85,13 +85,7 @@ def grid_search(INITIAL_REPLAY_MEM_LENGTH=1_000,
         np.random.seed(123)
         seed = env.seed(123)
         replay_memory = deque(maxlen=250_000)
-        model = load_agent("../double_q_learning/checkpoints/rl_agent_6", h_set)
-        target_model = deep_q_network(
-            lr=None,
-            graph_layers=h_set["graph_layers"]
-        )
-        target_model.load_weights("../double_q_learning/checkpoints/rl_agent_6")
-        target_model.trainable = False
+        model = load_agent("../double_q_learning/checkpoints/rl_agent_8", h_set)
 
         fidelity_reg = h_set["fidelity_reg"]
         episode_num = -1

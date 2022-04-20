@@ -4,7 +4,7 @@ import numpy as np
 
 
 if __name__ == "__main__":
-    test_set_name = "test_set_1"
+    test_set_name = "test_set_2"
     array = np.load(f"./checkpoints/{test_set_name}.npy")
     beginning = 0
     for idx, x in enumerate(array):

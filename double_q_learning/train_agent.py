@@ -2,8 +2,8 @@ from collections import deque
 
 from double_q_learning.advanced_taxi_env import AdvancedTaxiEnv
 from double_q_learning.experience_replay import train_step
-from double_q_learning.neural_networks import deep_q_network, deep_q_network
-from double_q_learning.preprocessing import ADJ_MATRIX, ADJ_MATRIX_SPARSE
+from double_q_learning.neural_networks import deep_q_network
+from double_q_learning.preprocessing import ADJ_MATRIX_SPARSE
 from double_q_learning.utils import plot_stats
 
 import tensorflow as tf
@@ -52,7 +52,7 @@ def epsilon_greedy_strategy(q_network, epsilon, state, action_space=6):
         return np.random.randint(0, action_space)
 
 
-def train(model_name="rl_agent_6",
+def train(model_name="rl_agent_8",
           learning_rate=.001,
           discount_factor=.95,
           batch_size=64,
@@ -83,7 +83,7 @@ def train(model_name="rl_agent_6",
         dense_layers = []
 
     if graph_layers is None:
-        graph_layers = [128]
+        graph_layers = [256]
 
     #########
     # Setup
@@ -102,7 +102,7 @@ def train(model_name="rl_agent_6",
     }
 
     env = AdvancedTaxiEnv()
-    env.seed(123)
+    env.seed(123456789)
     replay_memory = deque(maxlen=250_000)
     model = deep_q_network(
         lr=h_set["learning_rate"],
