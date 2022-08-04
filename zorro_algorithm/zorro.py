@@ -1,5 +1,5 @@
-from discrete_mask import DiscreteMask
-from zorro_utils import get_best_explanation
+from zorro_algorithm.discrete_mask import DiscreteMask
+from zorro_algorithm.zorro_utils import get_best_explanation
 from preprocessing import ADJ_MATRIX_SPARSE
 
 import tensorflow as tf
@@ -114,7 +114,7 @@ def zorro(gnn, X, A, threshold_fidelity=.7, max_recursion_depth=3):
 
 
 def zorro_wrapper(gnn, X, original_input, threshold_fidelity=.7):
-    """Returns the best explanation from the zorro algorithm
+    """Returns the best explanation from the zorro_algorithm algorithm
 
     :param gnn: The graph neural network to explain.
     :param X: The input for which an explanation shall be computed.

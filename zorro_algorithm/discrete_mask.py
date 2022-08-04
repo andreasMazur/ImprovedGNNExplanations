@@ -1,8 +1,8 @@
-import numpy as np
-
 from neural_networks import load_agent
 from preprocessing import AMT_NODES, FEATURE_DIM, ADJ_MATRIX_SPARSE
-from zorro_utils import new_feature_fidelity, new_node_fidelity, compute_fidelity
+from zorro_algorithm.zorro_utils import new_feature_fidelity, new_node_fidelity, compute_fidelity
+
+import numpy as np
 
 
 class DiscreteMask:

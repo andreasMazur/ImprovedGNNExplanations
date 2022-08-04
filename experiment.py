@@ -1,8 +1,8 @@
 from advanced_taxi_env import AdvancedTaxiEnv
 from neural_networks import load_agent
 from preprocessing import ADJ_MATRIX_SPARSE, draw_discrete_graph, draw_heat_graph
-from zorro.zorro import zorro_wrapper
-from zorro.zorro_utils import mean_squared_error
+from zorro_algorithm.zorro import zorro_wrapper
+from zorro_algorithm.zorro_utils import mean_squared_error
 
 from matplotlib import pyplot as plt
 
