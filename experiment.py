@@ -80,7 +80,7 @@ def use_network(model, state):
     return np.argmax(q_values), proxy, q_values
 
 
-def main(agent_checkpoint="./train_agent/checkpoints/rl_agent",
+def main(agent_checkpoint="./double_q_learning/checkpoints/rl_agent",
          proxy_checkpoint="./learn_proxies/checkpoints/test_set"):
     """The main experiment."""
 

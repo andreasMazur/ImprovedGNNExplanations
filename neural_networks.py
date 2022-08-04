@@ -203,7 +203,7 @@ if __name__ == "__main__":
     ###################
     # COMBINED NETWORK
     ###################
-    model_3 = load_agent("./checkpoints/TEST_MODEL", h_set_)
+    model_3 = load_agent("double_q_learning/checkpoints/TEST_MODEL", h_set_)
     model_3.summary()
     tf.keras.utils.plot_model(model_3, "../load_agent.svg", dpi=None, rankdir="LR")
     q_values_, proxy_ = model_3((test_input, ADJ_MATRIX_SPARSE))

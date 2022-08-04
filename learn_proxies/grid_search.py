@@ -1,6 +1,6 @@
 from advanced_taxi_env import AdvancedTaxiEnv
 from neural_networks import load_agent
-from train_agent.utils import plot_stats
+from double_q_learning.utils import plot_stats
 from learn_proxies.learn_proxies_utils import epsilon_greedy_strategy, proxy_train_step
 
 from collections import deque
@@ -43,7 +43,7 @@ def create_h_sets(learning_rates,
 
 def grid_search(initial_replay_mem_length=1_000,
                 amt_training_episodes=4_000,
-                agent_checkpoint="../train_agent/checkpoints/rl_agent"):
+                agent_checkpoint="../double_q_learning/checkpoints/rl_agent"):
     """Function that trains the proxy branch of an extended GNN-architecture.
 
     The 'extended GNN-architecture' refers to the fact, that a proxy branch is added
