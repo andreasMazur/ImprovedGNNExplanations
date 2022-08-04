@@ -1,10 +1,10 @@
+from preprocessing import ADJ_MATRIX_SPARSE
 from zorro_algorithm.discrete_mask import DiscreteMask
 from zorro_algorithm.zorro_utils import get_best_explanation
-from preprocessing import ADJ_MATRIX_SPARSE
 
-import tensorflow as tf
 import numpy as np
 import sys
+import tensorflow as tf
 
 
 def get_explanations(V_p,

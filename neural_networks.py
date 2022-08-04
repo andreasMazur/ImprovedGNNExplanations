@@ -1,7 +1,7 @@
 from keras.layers import Activation
+from spektral.layers import GeneralConv, DiffPool
 from tensorflow.keras.layers import Dense, Input, Reshape
 from tensorflow.keras.optimizers import Adam
-from spektral.layers import GeneralConv, DiffPool
 
 from preprocessing import AMT_NODES, FEATURE_DIM, ADJ_MATRIX_SPARSE
 

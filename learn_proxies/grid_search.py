@@ -1,16 +1,16 @@
-from advanced_taxi_env import AdvancedTaxiEnv
-from neural_networks import load_agent
-from double_q_learning.utils import plot_stats
-from learn_proxies.learn_proxies_utils import epsilon_greedy_strategy, proxy_train_step
-
 from collections import deque
 from tqdm import tqdm
 
-import tensorflow as tf
-import numpy as np
+from advanced_taxi_env import AdvancedTaxiEnv
+from double_q_learning.utils import plot_stats
+from learn_proxies.learn_proxies_utils import epsilon_greedy_strategy, proxy_train_step
+from neural_networks import load_agent
+
 import json
 import logging
+import numpy as np
 import sys
+import tensorflow as tf
 
 
 def create_h_sets(learning_rates,

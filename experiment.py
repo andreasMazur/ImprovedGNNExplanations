@@ -1,13 +1,13 @@
+from matplotlib import pyplot as plt
+
 from advanced_taxi_env import AdvancedTaxiEnv
 from neural_networks import load_agent
 from preprocessing import ADJ_MATRIX_SPARSE, draw_discrete_graph, draw_heat_graph
 from zorro_algorithm.zorro import zorro_wrapper
 from zorro_algorithm.zorro_utils import mean_squared_error
 
-from matplotlib import pyplot as plt
-
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
 
 def visualize_actions(actions, ref_actions, zo_actions, zp_actions, idx):

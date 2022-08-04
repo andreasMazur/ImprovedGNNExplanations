@@ -1,8 +1,8 @@
-import tensorflow as tf
-import numpy as np
-import random
-
 from preprocessing import FEATURE_DIM, AMT_NODES, ADJ_MATRIX_SPARSE
+
+import numpy as np
+import tensorflow as tf
+import random
 
 
 @tf.function

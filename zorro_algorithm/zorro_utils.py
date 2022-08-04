@@ -1,8 +1,8 @@
 from neural_networks import load_agent
 from preprocessing import AMT_NODES, FEATURE_DIM, ADJ_MATRIX_SPARSE
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
 
 def get_best_explanation(masks, model_, to_mask, original_input):

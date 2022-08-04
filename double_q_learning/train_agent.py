@@ -1,16 +1,16 @@
 from collections import deque
 
+from advanced_taxi_env import AdvancedTaxiEnv
 from double_q_learning.experience_replay import train_step
 from double_q_learning.utils import plot_stats
-from advanced_taxi_env import AdvancedTaxiEnv
 from neural_networks import deep_q_network
 from preprocessing import ADJ_MATRIX_SPARSE
 
-import tensorflow as tf
-import numpy as np
-import sys
 import json
 import logging
+import numpy as np
+import sys
+import tensorflow as tf
 
 
 def determine_current_epsilon(training_step,

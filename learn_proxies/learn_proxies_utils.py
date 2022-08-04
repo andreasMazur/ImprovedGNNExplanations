@@ -1,8 +1,8 @@
 from preprocessing import AMT_NODES, ADJ_MATRIX_SPARSE, FEATURE_DIM
 
-import tensorflow as tf
 import numpy as np
 import random
+import tensorflow as tf
 
 
 def epsilon_greedy_strategy(q_network, epsilon, state, action_space=6):
