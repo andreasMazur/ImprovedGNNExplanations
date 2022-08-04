@@ -8,8 +8,8 @@ from preprocessing import AMT_NODES, FEATURE_DIM, ADJ_MATRIX_SPARSE
 import tensorflow as tf
 
 
-def explainer_network(lr, graph_layers, amt_nodes=AMT_NODES, feature_dim=FEATURE_DIM):
-    """Neural network that predicts explanations for given observations
+def proxy_branch(lr, graph_layers, amt_nodes=AMT_NODES, feature_dim=FEATURE_DIM):
+    """Neural network that predicts proxies for given observations
 
     :param lr: Learning rate
     :param graph_layers: The shapes of the general graph convolutions applied to the input
@@ -29,7 +29,7 @@ def explainer_network(lr, graph_layers, amt_nodes=AMT_NODES, feature_dim=FEATURE
             name="gcn_25x128"
         )([input_, adj_matrix])
 
-    explanation = GeneralConv(
+    proxy = GeneralConv(
         channels=FEATURE_DIM,
         dropout=0.0,
         batch_norm=False,
@@ -38,12 +38,11 @@ def explainer_network(lr, graph_layers, amt_nodes=AMT_NODES, feature_dim=FEATURE
         name=f"proxy_input_25x{FEATURE_DIM}"
     )([node_f, adj_matrix])
 
-    # explanation = Softmax()(explanation)
-    explanation = Activation(activation="sigmoid", name="Sigmoid")(explanation)
+    proxy = Activation(activation="sigmoid", name="Sigmoid")(proxy)
 
     model = tf.keras.Model(
         inputs=[node_features_in, adj_matrix],
-        outputs=[explanation]
+        outputs=[proxy]
     )
 
     model.compile(
@@ -55,7 +54,7 @@ def explainer_network(lr, graph_layers, amt_nodes=AMT_NODES, feature_dim=FEATURE
 
 
 def deep_q_network(lr, graph_layers, amt_actions=6):
-    """Deep q-network that simultaneously predicts its own explanations
+    """Deep q-network that simultaneously predicts its own inputs
 
     :param lr: Learning rate
     :param graph_layers: The shapes of the general graph convolutions applied to the input
@@ -115,15 +114,15 @@ def deep_q_network(lr, graph_layers, amt_actions=6):
 
 
 def load_agent(load_path, h_set):
-    """Loads a trained agent and adds additional graph convolutions to the explanation branch.
+    """Loads a trained agent and adds a proxy branch.
 
-    Furthermore, it freezes the q-value prediction branch s.t. only the explanation branch will
+    Furthermore, it freezes the q-value prediction branch s.t. only the proxy branch will
     be trained.
 
     :param load_path: The path from where the base model will be loaded
     :param h_set: The hyperparameter set that fits to the base model and tells how many
                   additional graph convolutions shall be added
-    :return: An explanation neural network
+    :return: A neural network with added proxy branch
     """
 
     # Load trained agent
@@ -136,20 +135,20 @@ def load_agent(load_path, h_set):
     base_model = tf.keras.Model(inputs=base_model.input, outputs=[q_values, feature_embedding])
     base_model.trainable = False
 
-    # Initialize explanation net
-    explanation_net = explainer_network(
+    # Initialize proxy branch
+    proxy_b = proxy_branch(
         lr=h_set["learning_rate"],
         graph_layers=h_set["expl_graph_layers"],
         feature_dim=base_model.outputs[1].shape[2]
     )
 
-    # Connect explanation network on top of feature embedding
+    # Connect proxy network on top of feature embedding
     node_features_in = tf.keras.Input(shape=(AMT_NODES, FEATURE_DIM))
     adj_in = Input(tensor=ADJ_MATRIX_SPARSE, name="Adj. Matrix")
     q_values, f_embedding = base_model((node_features_in, adj_in))
-    explanation = explanation_net((f_embedding, adj_in))
+    proxy = proxy_b((f_embedding, adj_in))
 
-    total_model = tf.keras.Model(inputs=[node_features_in, adj_in], outputs=[q_values, explanation])
+    total_model = tf.keras.Model(inputs=[node_features_in, adj_in], outputs=[q_values, proxy])
 
     total_model.compile(
         loss={"mse": tf.keras.losses.MeanSquaredError()},
@@ -186,20 +185,20 @@ if __name__ == "__main__":
         "fidelity_reg": .001
     }
 
-    ####################
-    # EXPLAINER NETWORK
-    ####################
+    ###############
+    # PROXY BRANCH
+    ###############
     feature_dim_ = 10  # model_1.get_layer("feature_embedding").output.shape[2]
     test_input_2 = tf.random.normal((64, AMT_NODES, feature_dim_))
-    model_2 = explainer_network(
+    model_2 = proxy_branch(
         lr=h_set_["learning_rate"],
         graph_layers=h_set_["expl_graph_layers"],
         feature_dim=feature_dim_
     )
     model_2.summary()
     tf.keras.utils.plot_model(model_2, "../explainer_network.svg", dpi=None, rankdir="LR")
-    explanation_ = model_2((test_input_2, ADJ_MATRIX_SPARSE))
-    print(f"Explanation shape: {tf.shape(explanation_)}")
+    proxy_ = model_2((test_input_2, ADJ_MATRIX_SPARSE))
+    print(f"Proxy shape: {tf.shape(proxy_)}")
 
     ###################
     # COMBINED NETWORK
@@ -207,6 +206,6 @@ if __name__ == "__main__":
     model_3 = load_agent("./checkpoints/TEST_MODEL", h_set_)
     model_3.summary()
     tf.keras.utils.plot_model(model_3, "../load_agent.svg", dpi=None, rankdir="LR")
-    q_values_, explanation_ = model_3((test_input, ADJ_MATRIX_SPARSE))
-    print(f"Q-values shape: {tf.shape(q_values_)}; Explanation shape: {tf.shape(explanation_)}")
+    q_values_, proxy_ = model_3((test_input, ADJ_MATRIX_SPARSE))
+    print(f"Q-values shape: {tf.shape(q_values_)}; Proxy shape: {tf.shape(proxy_)}")
     model_3.save_weights("./checkpoints/TEST_EXPL_MODEL")

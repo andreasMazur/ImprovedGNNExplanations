@@ -118,8 +118,7 @@ def zorro_wrapper(gnn, X, original_input, threshold_fidelity=.7):
 
     :param gnn: The graph neural network to explain.
     :param X: The input for which an explanation shall be computed.
-    :param original_input: To offer comparability, fidelities are computed always w.r.t. the
-                    original input.
+    :param original_input: To offer comparability, fidelities are computed always w.r.t. the original input.
     :param threshold_fidelity: A minimum fidelity to be reached.
     :return: The best explanation that Zorro has found for a given observation and target action.
     """

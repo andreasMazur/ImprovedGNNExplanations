@@ -42,7 +42,8 @@ def create_h_sets(learning_rates,
 
 
 def grid_search(initial_replay_mem_length=1_000,
-                amt_training_episodes=4_000):
+                amt_training_episodes=4_000,
+                agent_checkpoint="../train_agent/checkpoints/rl_agent"):
     """Function that trains the proxy branch of an extended GNN-architecture.
 
     The 'extended GNN-architecture' refers to the fact, that a proxy branch is added
@@ -55,6 +56,7 @@ def grid_search(initial_replay_mem_length=1_000,
     :param initial_replay_mem_length: The amount of samples within the replay memory before starting
                                       the actual training procedure
     :param amt_training_episodes: The amount of episodes used to train the proxy branch
+    :param agent_checkpoint: The path to the trained reinforcement learning agent
     """
 
     h_sets = create_h_sets(
@@ -77,7 +79,7 @@ def grid_search(initial_replay_mem_length=1_000,
         np.random.seed(123)
         seed = env.seed(123)
         replay_memory = deque(maxlen=250_000)
-        model = load_agent("../double_q_learning/checkpoints/rl_agent_8", h_set)
+        model = load_agent(agent_checkpoint, h_set)
 
         fidelity_reg = h_set["fidelity_reg"]
         episode_num = -1

@@ -65,7 +65,7 @@ def visualize_graphs(state, a_orig, ref, fid_ref, a_ref, zo, fid_zo, a_zo, zp, f
     plt.subplot(144)
     draw_heat_graph(zp, fid=fid_zp, action_=a_zp, title="Zorro Proxy", show=False)
 
-    plt.savefig(f"./ExperimentImages/Experiment_Explanation_{idx}.svg", format="svg")
+    plt.savefig(f"./ExperimentImages/Experiment_Proxy_{idx}.svg", format="svg")
     plt.show()
 
 
@@ -75,12 +75,13 @@ def use_network(model, state):
     if len(state.shape) == 2:
         state = tf.expand_dims(state, axis=0)
     state = tf.cast(state, tf.float32)
-    q_values, explanation = model((state, ADJ_MATRIX_SPARSE))
+    q_values, proxy = model((state, ADJ_MATRIX_SPARSE))
     q_values = q_values[0]
-    return np.argmax(q_values), explanation, q_values
+    return np.argmax(q_values), proxy, q_values
 
 
-def main():
+def main(agent_checkpoint="./train_agent/checkpoints/rl_agent",
+         proxy_checkpoint="./learn_proxies/checkpoints/test_set"):
     """The main experiment."""
 
     # Setup environment and seeds
@@ -90,7 +91,8 @@ def main():
     np.random.seed(seed)
     env.seed(seed)
 
-    # Load the agent
+    # Load the agent: MAKE SURE TO SAME HYPERPARAMETERS AS USED TO TRAIN THE PROXY BRANCH WHICH IS STORED IN
+    #                 `proxy_checkpoint`!
     h_set = {
         "learning_rate": [.001],
         "batch_size": [64],
@@ -98,8 +100,8 @@ def main():
         "expl_graph_layers": [128],
         "fidelity_reg": [.001]
     }
-    model = load_agent("train_agent/checkpoints/rl_agent", h_set)
-    model.load_weights("./checkpoints/test_set_2")
+    model = load_agent(agent_checkpoint, h_set)
+    model.load_weights(proxy_checkpoint)
 
     MAX_EPISODES = 150
     for episode_number in range(MAX_EPISODES):
@@ -123,19 +125,23 @@ def main():
         while not done and step_number < 35:
             step_number += 1
             env.render()
-            action, explanation, q_values = use_network(model, state)
-            action_ref, _, q_values_ref = use_network(model, explanation)
+
+            # Compute agent prediction and proxy for original input and agent prediction for proxy
+            action, proxy, q_values = use_network(model, state)
+            action_ref, _, q_values_ref = use_network(model, proxy)
+
+            # Compute fidelity
             fid_ref = mean_squared_error(q_values, q_values_ref)
 
             # Apply Zorro algorithm on original input
             zorro_original, action_zo, fid_zo = zorro_wrapper(model, state, state)
 
-            # Apply Zorro algorithm on explanation
-            zorro_noisy, action_zp, fid_zp = zorro_wrapper(model, explanation, state)
+            # Apply Zorro algorithm on proxy
+            zorro_noisy, action_zp, fid_zp = zorro_wrapper(model, proxy, state)
 
             visualize_graphs(
                 state, action,
-                explanation, fid_ref, action_ref,
+                proxy, fid_ref, action_ref,
                 zorro_original, fid_zo, action_zo,
                 zorro_noisy, fid_zp, action_zp,
                 f"{episode_number}_{step_number}"
@@ -151,9 +157,9 @@ def main():
             action_zo_mem.append(action_zo)
             action_zp_mem.append(action_zp)
 
-            if len(explanation.shape) == 3:
-                explanation = explanation[0]
-            ref_expl_mem.append(explanation)
+            if len(proxy.shape) == 3:
+                proxy = proxy[0]
+            ref_expl_mem.append(proxy)
 
             if len(zorro_original.shape) == 3:
                 zorro_original = zorro_original[0]
@@ -166,11 +172,9 @@ def main():
             state, reward, done, info = env.step(action)
 
         visualize_fidelities(fid_ref_mem, fid_zo_mem, fid_zp_mem, idx=episode_number)
-        visualize_actions(
-            action_mem, action_ref_mem, action_zo_mem, action_zp_mem, idx=episode_number
-        )
+        visualize_actions(action_mem, action_ref_mem, action_zo_mem, action_zp_mem, idx=episode_number)
 
-        # Store episode explanations
+        # Store episode proxies
         ref_expl_mem = np.stack(ref_expl_mem)
         zo_expl_mem = np.stack(zo_expl_mem)
         zp_expl_mem = np.stack(zp_expl_mem)

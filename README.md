@@ -13,6 +13,11 @@ This experiment was conducted with Python3.9. Further, install the requirements:
 ```pip install -r requirements.txt```
 
 If you want to repeat the experiment yourself, then you need to execute the `experiment.py`-script in the repository's root directory.
+It will automatically load a pre-trained network with its added and trained proxy-branch. If you want to repeat everything
+from scratch, you must:
+1. Train a reinforcement learning agent by executing the ``train_agent.train_agent``-script
+2. Train the explanation branch by executing the ``learn_proxies.grid_search``-script (requires trained agent from previous step)
+3. Conduct experiment by executing `experiment`-script
 
 # References
 
