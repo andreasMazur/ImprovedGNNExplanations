@@ -4,5 +4,5 @@ matplotlib==3.5.1
 networkx==2.6.3
 spektral==1.0.8
 pydot==1.4.2
-numpy==1.19.5
+numpy>=1.22
 tqdm
