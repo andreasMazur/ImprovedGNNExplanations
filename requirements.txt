@@ -1,8 +1,8 @@
 gym==0.21.0
-tensorflow>=2.7.2
-matplotlib>=3.5.1
+tensorflow==2.7.2
+matplotlib==3.5.1
 networkx==2.6.3
-spektral>=1.0.8
+spektral==1.0.8
 pydot==1.4.2
-numpy>=1.22
-tqdm
+numpy==1.19.0
+tqdm==4.64.0
