@@ -1,10 +1,10 @@
 from collections import deque
 
+from double_q_learning.experience_replay import train_step
+from double_q_learning.utils import plot_stats
 from advanced_taxi_env import AdvancedTaxiEnv
-from train_agent.experience_replay import train_step
 from neural_networks import deep_q_network
 from preprocessing import ADJ_MATRIX_SPARSE
-from train_agent.utils import plot_stats
 
 import tensorflow as tf
 import numpy as np
