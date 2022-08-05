@@ -170,7 +170,7 @@ if __name__ == "__main__":
     test_input = tf.random.normal((64, AMT_NODES, FEATURE_DIM))
     model_1 = deep_q_network(.001, [64], 6)
     model_1.summary()
-    tf.keras.utils.plot_model(model_1, "../deep_q_network.svg", dpi=None, rankdir="LR")
+    tf.keras.utils.plot_model(model_1, "./deep_q_network.svg", dpi=None, rankdir="LR")
     q_values_ = model_1((test_input, ADJ_MATRIX_SPARSE))
     print(f"Q-values shape: {tf.shape(q_values_)}")
     model_1.save_weights("./checkpoints/TEST_MODEL")
@@ -196,7 +196,7 @@ if __name__ == "__main__":
         feature_dim=feature_dim_
     )
     model_2.summary()
-    tf.keras.utils.plot_model(model_2, "../explainer_network.svg", dpi=None, rankdir="LR")
+    tf.keras.utils.plot_model(model_2, "./explainer_network.svg", dpi=None, rankdir="LR")
     proxy_ = model_2((test_input_2, ADJ_MATRIX_SPARSE))
     print(f"Proxy shape: {tf.shape(proxy_)}")
 
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     ###################
     model_3 = load_agent("double_q_learning/checkpoints/TEST_MODEL", h_set_)
     model_3.summary()
-    tf.keras.utils.plot_model(model_3, "../load_agent.svg", dpi=None, rankdir="LR")
+    tf.keras.utils.plot_model(model_3, "./load_agent.svg", dpi=None, rankdir="LR")
     q_values_, proxy_ = model_3((test_input, ADJ_MATRIX_SPARSE))
     print(f"Q-values shape: {tf.shape(q_values_)}; Proxy shape: {tf.shape(proxy_)}")
     model_3.save_weights("./checkpoints/TEST_EXPL_MODEL")
