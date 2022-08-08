@@ -2,8 +2,8 @@
 
 This script executes the experiment conducted in:
 
-    > Improving Zorro Explanations for Sparse Observations with Dense Proxy Data
     > Andreas Mazur, André Artelt and Barbara Hammer
+    > Improving Zorro Explanations for Sparse Observations with Dense Proxy Data
 
 Essentially, it evaluates explanations of the Zorro algorithm for a pre-trained
 graph neural network to proxy data, and explanations retrieved by applying Zorro

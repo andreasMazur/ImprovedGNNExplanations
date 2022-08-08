@@ -6,12 +6,49 @@ import numpy as np
 
 
 class DiscreteMask:
+    """A class providing an interface to reliably create discrete masks over multiple iterations
 
-    def __init__(self, V_p: set, F_p: set):
-        """Data structure to manage all sets needed for Zorro.
+    Attributes
+    ----------
+    V_p:
+        The set of all possible nodes (indices)
+    F_p:
+        The set of all possible features (indices)
+    V_r:
+        The set of remaining nodes (indices) which can be included in an explanation
+    F_r:
+        The set of remaining features (indices) which can be included in an explanation
+    V_s:
+        The set of selected nodes (indices) for the explanation
+    F_s:
+        The set of selected features (indices) for the explanation
+    best_V_s:
+        The set of selected nodes (indices) with the highest fidelity
+    best_F_s:
+        The set of selected features (indices) with the highest fidelity
+    best_fidelity:
+        The fidelity of the explanation considering (best_V_s, best_F_s)
 
-        :param V_p: The set of nodes which can be included in an explanation.
-        :param F_p: The set of features which can be included in an explanation.
+    Methods
+    -------
+    init_mask(X, A, gnn)
+        Initialization of the mask (adds the first element to the mask)
+    add_element_to_mask(nodes_ranking, features_ranking)
+        Adds an element to the selected nodes and features
+    compute_current_ranking(X, A, gnn)
+        Computes the current ranking for all remaining elements
+    compute_mask_fidelity(X, A, gnn)
+        Computes the fidelity for the currently selected mask
+    """
+
+    def __init__(self, V_p, F_p):
+        """
+        Parameters
+        ----------
+        V_p: set
+            The set of all possible nodes (indices)
+        F_p: set
+            The set of all possible features (indices)
         """
 
         self.V_p = V_p
@@ -26,8 +63,8 @@ class DiscreteMask:
         self.F_s = set()
 
         # Remember best mask
-        self.best_V_p = None
-        self.best_F_p = None
+        self.best_V_s = None
+        self.best_F_s = None
         self.best_fidelity = -np.inf
 
     def init_mask(self, X, A, gnn):
@@ -37,9 +74,19 @@ class DiscreteMask:
             - a node if a feature has been selected as the first element
             - a feature if a node has been selected as the first element
 
-        :param X: The original feature matrix for which an explanation shall be computed.
-        :param A: The corresponding adjacency matrix.
-        :param gnn: The graph neural network to explain.
+        Parameters
+        ----------
+        X: np.ndarray
+            The original feature matrix for which an explanation shall be computed
+        A: np.ndarray
+            The corresponding adjacency matrix
+        gnn: tf.keras.Model
+            The graph neural network to explain
+
+        Returns
+        -------
+        bool
+            A value telling whether there is more than one remaining node or feature left to add
         """
 
         nodes = np.array(list(self.V_p), dtype=np.int32)
@@ -66,12 +113,24 @@ class DiscreteMask:
         return self.add_element_to_mask(nodes_ranking, features_ranking)
 
     def add_element_to_mask(self, nodes_ranking, features_ranking):
-        """Adds an element to the selected nodes and features.
+        """Adds an element to the selected nodes and features
 
-        :param nodes_ranking: A ranking of nodes based on their fidelities .
-        :param features_ranking: A ranking of features based on their fidelities.
-        :return: True or false depending on whether there are more than one remaining elements
-                 left.
+        Note:
+            The term "ranking" is a bit misleading here. Initial implementations actually required
+            sets in a specific order. Here, however, no specific order is required. Only fidelity values
+            must be added as for example in `init_mask`. Refactoring this is subject to upcoming patches.
+
+        Parameters
+        ----------
+        nodes_ranking: np.ndarray
+            A ranking of nodes based on their fidelities
+        features_ranking: np.ndarray
+            A ranking of features based on their fidelities
+
+        Returns
+        -------
+        boolean
+            True or false depending on whether there are more than one remaining elements left
         """
 
         if nodes_ranking.shape[0] == 0:
@@ -113,15 +172,25 @@ class DiscreteMask:
         return len(self.V_r) + len(self.F_r) > 1
 
     def compute_current_ranking(self, X, A, gnn):
-        """Computes the current ranking for all remaining elements.
+        """Computes the current ranking for all remaining elements
 
         The ranking is computed in terms of fidelity values when added to the current
         selected nodes and features.
 
-        :param X: The original feature matrix for which an explanation shall be computed.
-        :param A: The corresponding adjacency matrix.
-        :param gnn: The graph neural network to explain.
-        :return: The ranking between all remaining nodes and features.
+        Parameters
+        ----------
+        X: np.ndarray
+            The original feature matrix for which an explanation shall be computed
+        A: np.ndarray
+            The corresponding adjacency matrix
+        gnn: tf.keras.Model
+            The graph neural network to explain
+
+        Returns
+        -------
+        (np.ndarray, np.ndarray)
+            Two arrays containing the node or feature indices, respectively, with their currently
+            associated fidelity values *in no specific order' (see not in `add_element_to_mask`)
         """
 
         remaining_nodes = np.array(list(self.V_r), dtype=np.int32)
@@ -160,12 +229,21 @@ class DiscreteMask:
         return nodes_ranking, features_ranking
 
     def compute_mask_fidelity(self, X, A, gnn):
-        """Computes the fidelity for the currently selected mask.
+        """Computes the fidelity for the currently selected mask
 
-        :param X: The original feature matrix for which an explanation shall be computed.
-        :param A: The corresponding adjacency matrix.
-        :param gnn: The graph neural network to explain.
-        :return: The fidelity of the currently selected mask.
+        Parameters
+        ----------
+        X: np.ndarray
+            The original feature matrix for which an explanation shall be computed
+        A: np.ndarray
+            The corresponding adjacency matrix
+        gnn: tf.keras.Model
+            The graph neural network to explain
+
+        Returns
+        -------
+        float
+            The fidelity of the currently selected mask.
         """
 
         selected_nodes = np.array(list(self.V_s), dtype=np.int32)
@@ -173,8 +251,8 @@ class DiscreteMask:
         mask_fidelity = compute_fidelity(gnn, X, A, selected_nodes, selected_features)
 
         if mask_fidelity > self.best_fidelity:
-            self.best_V_p = self.V_s.copy()
-            self.best_F_p = self.F_s.copy()
+            self.best_V_s = self.V_s.copy()
+            self.best_F_s = self.F_s.copy()
             self.best_fidelity = mask_fidelity
 
         return mask_fidelity
@@ -185,14 +263,12 @@ if __name__ == "__main__":
     h_set = {
         "learning_rate": [.001],
         "batch_size": [64],
-        "graph_layers": [64],  # depends on what model you retrain
+        "graph_layers": [256],  # depends on what model you retrain
         "expl_graph_layers": [128],
         "fidelity_reg": [.001]
     }
-    model = load_agent("../misc/double_q_learning/checkpoints/rl_agent_4", h_set)
-    model.load_weights(
-        "../learn_proxies/checkpoints/transfer_learning_no_rounding_2/test_set_0"
-    )
+    model = load_agent("../double_q_learning/checkpoints/rl_agent", h_set)
+    model.load_weights("../learn_proxies/checkpoints/test_set")
     X_ = np.random.normal(size=(1, AMT_NODES, FEATURE_DIM))
     V_s_, F_s_ = {1, 2, 3}, {2}
     V_p_, F_p_ = set(np.arange(AMT_NODES)), set(np.arange(FEATURE_DIM))

@@ -16,7 +16,44 @@ def get_explanations(V_p,
                      recursion_depth,
                      max_recursion_depth=np.inf,
                      verbose=True):
+    """A possible implementation of the Zorro algorithm from [1].
 
+    Note: In specific, this function represents our implementation of Algorithm (1) in paper [1].
+
+    Parameters
+    ----------
+    V_p: set
+        The set of possible nodes Zorro can select from
+    F_p: set
+        The set of possible features Zorro can select from
+    threshold_fidelity: float
+        A threshold fidelity that should be exceeded by the explanations produced by Zorro
+    X: np.ndarray
+        The feature matrix of the observed graph
+    A: np.ndarray
+        The adjacency matrix of the observed graph
+    gnn: tf.keras.Model
+        The graph neural network to analyse
+    recursion_depth: int
+        The current recursion depth
+    max_recursion_depth: int
+        The maximal amount of recursions
+    verbose: boolean
+        Whether to report the algorithm's intermediate results in the console
+
+    Returns
+    -------
+    list
+        A list of disjoint explanations for the graph described by (X, A)
+
+    References
+    ----------
+    [1]
+        Funke, Thorben, Megha Khosla, and Avishek Anand.
+        Zorro: Valid, sparse, and stable explanations in graph neural networks.
+        arXiv preprint arXiv:2105.08621 (2021).
+
+    """
     S = []
     if recursion_depth < max_recursion_depth:
         mask = DiscreteMask(V_p, F_p)
@@ -63,7 +100,7 @@ def get_explanations(V_p,
         elif mask_fidelity <= threshold_fidelity and not remaining_elems_left:  # (III)
             # Instead of no mask we return the best possible mask if threshold fidelity wasn't
             # exceeded.
-            return [(mask.best_V_p, mask.best_F_p, mask.best_fidelity)]
+            return [(mask.best_V_s, mask.best_F_s, mask.best_fidelity)]
             # return []
         else:  # (II)
             explanation = [(mask.V_s, mask.F_s, mask_fidelity)]
@@ -93,14 +130,25 @@ def get_explanations(V_p,
 
 
 def zorro(gnn, X, A, threshold_fidelity=.7, max_recursion_depth=3):
-    """The entry point for the Zorro algorithm.
+    """The entry point for the Zorro algorithm
 
-    :param gnn: The graph neural network to explain.
-    :param X: The original feature matrix for which an explanation shall be computed.
-    :param A: The corresponding adjacency matrix.
-    :param threshold_fidelity: A minimum fidelity to be reached
-    :param max_recursion_depth: Caps depth of recursion tree and therefore amount of recursions.
-    :return: Multiple possible explanations for a given observation.
+    Parameters
+    ----------
+    gnn: tf.keras.Model
+        The graph neural network to analyse
+    X: np.ndarray
+        The original feature matrix for which an explanation shall be computed
+    A: np.ndarray
+        The corresponding adjacency matrix to `X`
+    threshold_fidelity: float
+        A minimum fidelity to be reached
+    max_recursion_depth: int
+        Integer that caps depth of recursion tree and therefore amount of recursions.
+
+    Returns
+    -------
+    list
+        A list of disjoint explanations for the graph described by (X, A)
     """
 
     if len(X.shape) == 2:
@@ -114,13 +162,23 @@ def zorro(gnn, X, A, threshold_fidelity=.7, max_recursion_depth=3):
 
 
 def zorro_wrapper(gnn, X, original_input, threshold_fidelity=.7):
-    """Returns the best explanation from the zorro_algorithm algorithm
+    """Returns the best explanation from the zorro_algorithm algorithm and serves as an API to our Zorro implementation
 
-    :param gnn: The graph neural network to explain.
-    :param X: The input for which an explanation shall be computed.
-    :param original_input: To offer comparability, fidelities are computed always w.r.t. the original input.
-    :param threshold_fidelity: A minimum fidelity to be reached.
-    :return: The best explanation that Zorro has found for a given observation and target action.
+    Parameters
+    ----------
+    gnn: tf.keras.Model
+        The graph neural network to explain.
+    X: np.ndarray
+        The input for which an explanation shall be computed.
+    original_input: np.ndarray
+        To offer comparability, fidelities are computed always w.r.t. the original input.
+    threshold_fidelity: float
+        A minimum fidelity to be reached.
+
+    Returns
+    -------
+    np.ndarray
+        The best explanation that Zorro has found for a given observation and target action.
     """
 
     explanations = zorro(gnn, X, ADJ_MATRIX_SPARSE, threshold_fidelity)
