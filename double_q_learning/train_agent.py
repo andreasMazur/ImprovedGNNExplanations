@@ -1,3 +1,15 @@
+"""Execute this script to train a deep reinforcement learning agent via double deep Q-learning
+
+In order to execute double deep Q-learning, this script requires the following libraries:
+    - numpy
+    - tensorflow
+
+It implements the following functions:
+    - determine_current_epsilon: Determines the current epsilon value
+    - epsilon_greedy_strategy: Epsilon-greedy strategy
+    - train: The training procedure for the RL-agent (meta function for double Q-learning)
+"""
+
 from collections import deque
 
 from advanced_taxi_env import AdvancedTaxiEnv
