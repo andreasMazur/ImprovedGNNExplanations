@@ -13,7 +13,30 @@ def compute_target_values(q_values,
                           actions,
                           rewards,
                           discount_factor):
-    """Computes the target q-values for experience replay."""
+    """Computes the target q-values for experience replay
+
+    Parameters
+    ----------
+    q_values: tf.Tensor
+        The Q-values predicted by `model` for the observations
+    qs_next_state: tf.Tensor
+        The Q-values predicted by `target_model` for the observations perceived after execution the predicted action
+    dones: tf.Tensor
+        Values telling whether the episode is done after executing predicted action
+    batch_size: int
+        The batch size
+    actions: tf.Tensor
+        The predicted actions given `q_values`
+    rewards: tf.Tensor
+        The rewards received for `actions`
+    discount_factor: float
+        The discount factor
+
+    Returns
+    -------
+    tf.Tensor
+        Target Q-values for double deep Q-learning
+    """
 
     # Determine the indices of the actions which DID NOT end an episode (within q_values-tensor)
     no_dones = tf.math.logical_not(dones)
@@ -52,7 +75,30 @@ def train_step(replay_memory,
                target_model,
                trace=None,
                amt_nodes=AMT_NODES):
-    """One training step 'double experience replay'"""
+    """One training step of double experience replay
+
+    Parameters
+    ----------
+    replay_memory: dequeue
+        The replay memory (for concrete structure, see how in `train_agent` elements are added)
+    batch_size: int
+        The batch size
+    discount_factor: float
+        The discount factor
+    model: tf.keras.Model
+        The model to train
+    target_model: tf.keras.Model
+        The model to decouple action selection from -evaluation, i.e. the model used to predict target Q-values
+    trace: tf.types.ConcreteFunction
+        The trace of `double_experience_replay` (if already executed once)
+    amt_nodes: int
+        The amount of nodes in a graph observation
+
+    Returns
+    -------
+    (float, tf.types.ConcreteFunction)
+        The loss value and the trace of the training function (to avoid retracing in Tensorflow)
+    """
 
     # Sample experiences
     mini_batch = np.array(random.sample(replay_memory, batch_size), dtype=object)
@@ -63,18 +109,6 @@ def train_step(replay_memory,
     actions = tf.constant(mini_batch[:, 1].astype(np.int32))
     rewards = tf.constant(mini_batch[:, 2].astype(np.float32))
     dones = tf.constant(np.array((mini_batch[:, 4])).astype(np.bool))
-
-    # loss = double_experience_replay(
-    #     dones,
-    #     tf.constant(batch_size),
-    #     actions,
-    #     rewards,
-    #     tf.constant(discount_factor),
-    #     states,
-    #     next_states,
-    #     model,
-    #     target_model
-    # )
 
     # Train network
     if trace is None:
@@ -126,7 +160,34 @@ def double_experience_replay(dones,
                              next_states,
                              model,
                              target_model):
-    """Explanation assisted experience replay for double q-learning."""
+    """Computes loss and gradients for one training step of double experience replay
+
+    Parameters
+    ----------
+    dones: tf.Tensor
+        Values telling whether the episode is done after executing predicted action
+    batch_size: int
+        The batch size
+    actions: tf.Tensor
+        The predicted actions
+    rewards: tf.Tensor
+        The returned rewards for the predicted actions
+    discount_factor: float
+        The discount factor
+    states: tf.Tensor
+        The observations of the agent
+    next_states: tf.Tensor
+        The subsequent observations after executing the predicted action
+    model: tf.keras.Model
+        The model to train
+    target_model: tf.keras.Model
+        The model to decouple action selection from -evaluation, i.e. the model used to predict target Q-values
+
+    Returns
+    -------
+    float
+        Loss value
+    """
 
     with tf.GradientTape() as tape:
         q_values = model((states, ADJ_MATRIX_SPARSE))

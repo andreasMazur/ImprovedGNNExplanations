@@ -17,13 +17,23 @@ def determine_current_epsilon(training_step,
                               fifty_percent_chance,
                               start_epsilon=1.0,
                               min_epsilon=0.01):
-    """Determines the current epsilon value.
+    """Determines the current epsilon value
 
-    :param fifty_percent_chance: The training step in which epsilon shall be .5
-    :param training_step: The current training step
-    :param start_epsilon: The initial value for epsilon
-    :param min_epsilon: The minimal value for epsilon
-    :return: A probability for choosing a random action (epsilon)
+    Parameters
+    ----------
+    training_step: int
+        The current training step
+    fifty_percent_chance: float
+        The training step in which epsilon shall be .5
+    start_epsilon: float
+        The initial value for epsilon
+    min_epsilon: float
+        The minimal value for epsilon
+
+    Returns
+    -------
+    float
+        A probability for choosing a random action (epsilon)
     """
     return max(
         min_epsilon,
@@ -36,11 +46,21 @@ def epsilon_greedy_strategy(q_network, epsilon, state, action_space=6):
 
     Returns a random action with the probability 'epsilon'.
 
-    :param state: The state for which an actions shall be predicted
-    :param epsilon: The current epsilon value
-    :param q_network: The q-network used to predict actions
-    :param action_space: Amount of possible actions to choose from
-    :return: An action
+    Parameters
+    ----------
+    state: np.ndarray
+        The state for which an actions shall be predicted
+    epsilon: float
+        The current epsilon value
+    q_network: tf.keras.Model
+        The q-network used to predict actions
+    action_space: int
+        Amount of possible actions to choose from
+
+    Returns
+    -------
+    int
+        An action
     """
     if np.random.random() > epsilon:
         state = tf.reshape(state, (1,) + state.shape)
@@ -52,7 +72,7 @@ def epsilon_greedy_strategy(q_network, epsilon, state, action_space=6):
         return np.random.randint(0, action_space)
 
 
-def train(model_name="rl_agent_8",
+def train(model_name="rl_agent",
           learning_rate=.001,
           discount_factor=.95,
           batch_size=64,
@@ -64,19 +84,29 @@ def train(model_name="rl_agent_8",
           TARGET_PERFORMANCE=20):
     """The training procedure for the RL-agent (meta function for double Q-learning)
 
-    :param model_name: The name under which the agent shall be stored
-    :param learning_rate: The learning rate for the deep-Q-network
-    :param discount_factor: The discount factor for the expected discounted return
-    :param batch_size: The batch size for training examples in one training step
-    :param fifty_percent_chance: The training step in which epsilon shall be .5
-    :param update_target: The frequency in which the target Q-network will be updated
-                          (in training steps)
-    :param graph_layers: The shapes of the general graph convolutions applied to the input
-    :param dense_layers: The shapes of the dense layers used to classify the graph embedding
-    :param INITIAL_REPLAY_MEM_LENGTH: The amount of samples within the replay memory before starting
-                                      the actual training procedure
-    :param TARGET_PERFORMANCE: Termination condition - Average amount of required steps for an
-                               episode for the past 100 (see win_size variable) steps
+    Parameters
+    ----------
+    model_name: str
+        The name under which the agent shall be stored
+    learning_rate: float
+        The learning rate for the deep-Q-network
+    discount_factor: float
+        The discount factor for the expected discounted return
+    batch_size: int
+        The batch size for training examples in one training step
+    fifty_percent_chance: float
+        The training step in which epsilon shall be .5
+    update_target: int
+        The frequency in which the target Q-network will be updated (in training steps)
+    graph_layers: list
+        The shapes of the general graph convolutions applied to the input
+    dense_layers: list
+        The shapes of the dense layers used to classify the graph embedding
+    INITIAL_REPLAY_MEM_LENGTH: int
+        The amount of samples within the replay memory before starting the actual training procedure
+    TARGET_PERFORMANCE: int
+        Termination condition - Average amount of required steps for an episode for the past 100 (see win_size variable)
+        steps
     """
 
     if dense_layers is None:

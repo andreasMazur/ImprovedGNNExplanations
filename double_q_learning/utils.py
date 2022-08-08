@@ -4,15 +4,22 @@ import numpy as np
 
 
 def plot_stats(file_name, path, exploration_rate, target_updates_=None, plot=False, **kwargs):
-    """Plot the stats of a training procedure.
+    """Plot the stats of a training procedure
 
-    :param file_name: The file name of the plot.
-    :param path: Where to store the plot.
-    :param exploration_rate: An array containing the last exploration rates of the passed
-                             episodes.
-    :param target_updates_: The episode numbers in which the target network has been updated.
-    :param plot: Whether to display the plot or not.
-    :param kwargs: The arrays which shall be plotted.
+    Parameters
+    ----------
+    file_name: str
+        The file name of the plot
+    path: str
+        Where to store the plot
+    exploration_rate: list
+        An array containing the last exploration rates of the passed episodes
+    target_updates_: list
+        The episode numbers in which the target network has been updated
+    plot: boolean
+        Whether to display the plot or not
+    kwargs:
+        The arrays which shall be plotted (see an example in `train_agent.py`)
     """
 
     if len(kwargs) == 1:
