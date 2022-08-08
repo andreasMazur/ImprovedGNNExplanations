@@ -1,3 +1,18 @@
+"""A script to conduct a grid search over multiple hyperparameter-sets for proxy branches
+
+Use this script whenever you a have trained RL-agent and want to add and train an explanation branch.
+In order to do this, this script requires the following libraries:
+    - json
+    - tqdm
+    - numpy
+    - tensorflow
+
+It implements the following functions:
+    - create_h_sets: Creates hyperparameter sets for a grid search
+    - grid_search: Train (multiple times) the proxy branch of an extended GNN-architecture w.r.t. multiple
+                   hyperparameter-sets
+"""
+
 from collections import deque
 from tqdm import tqdm
 
@@ -18,7 +33,26 @@ def create_h_sets(learning_rates,
                   graph_layers,
                   expl_graph_layers,
                   fidelity_reg):
-    """Creates hyperparameter sets for a grid search."""
+    """Creates hyperparameter sets for a grid search
+
+    Parameters
+    ----------
+    learning_rates: list
+        The learning rates to consider
+    batch_sizes: list
+        The batch sizes to consider
+    graph_layers: list
+        The output dimensions of each graph convolution to consider (only deep Q-network/"upper branch")
+    expl_graph_layers: list
+        The output dimensions of each graph convolution to consider (only proxy branch/"lower branch")
+    fidelity_reg: list
+        The fidelity regularization constants to consider
+
+    Returns
+    -------
+    list
+        A list of hyperparameter-sets, each one represented as a dictionary
+    """
 
     hyper_parameters = []
     test_set_number = 0
@@ -44,19 +78,22 @@ def create_h_sets(learning_rates,
 def grid_search(initial_replay_mem_length=1_000,
                 amt_training_episodes=4_000,
                 agent_checkpoint="../double_q_learning/checkpoints/rl_agent"):
-    """Function that trains the proxy branch of an extended GNN-architecture.
+    """Train (multiple times) the proxy branch of an extended GNN-architecture w.r.t. multiple hyperparameter-sets
 
-    The 'extended GNN-architecture' refers to the fact, that a proxy branch is added
-    to the feature-embedding layer of a Q-network.
+    The 'extended GNN-architecture' refers to the added proxy branch at the feature-embedding layer of a Q-network.
 
     Grid-search:
         Instead of training one network until a goal criterion is met, train multiple networks
         for a fixed amount of training episodes.
 
-    :param initial_replay_mem_length: The amount of samples within the replay memory before starting
-                                      the actual training procedure
-    :param amt_training_episodes: The amount of episodes used to train the proxy branch
-    :param agent_checkpoint: The path to the trained reinforcement learning agent
+    Parameters
+    ----------
+    initial_replay_mem_length: int
+        The amount of samples within the replay memory before starting the actual training procedure
+    amt_training_episodes: int
+        The amount of episodes used to train the proxy branch
+    agent_checkpoint: str
+        The path to the trained reinforcement learning agent
     """
 
     h_sets = create_h_sets(
