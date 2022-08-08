@@ -159,7 +159,7 @@ def use_network(model, state):
     model: tf.keras.Model
         The model to use in order to predict an action and a proxy
     state: np.ndarray
-        The input for the model.
+        The input for the model
 
     Returns
     -------
