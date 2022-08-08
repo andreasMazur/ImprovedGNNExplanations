@@ -15,7 +15,7 @@ def proxy_branch(lr, graph_layers, amt_nodes=AMT_NODES, feature_dim=FEATURE_DIM)
     :param graph_layers: The shapes of the general graph convolutions applied to the input
     :param amt_nodes: The amount of nodes within a graph
     :param feature_dim: The amount of features per node
-    :return: A configured explainer network
+    :return: A configured proxy branch
     """
 
     node_features_in = Input(shape=(amt_nodes, feature_dim), name="feature_embedding")
@@ -59,7 +59,7 @@ def deep_q_network(lr, graph_layers, amt_actions=6):
     :param lr: Learning rate
     :param graph_layers: The shapes of the general graph convolutions applied to the input
     :param amt_actions: The amount of possible actions
-    :return: A configured hybrid explainer- and deep q-network
+    :return: A configured proxy branch and deep q-network
     """
     node_features_in = Input(shape=(AMT_NODES, FEATURE_DIM), name="Feature Matrix")
     adj_matrix_in = Input(tensor=ADJ_MATRIX_SPARSE, name="Adj. Matrix")
@@ -142,24 +142,24 @@ def load_agent(load_path, h_set):
         feature_dim=base_model.outputs[1].shape[2]
     )
 
-    # Connect proxy network on top of feature embedding
+    # Connect proxy branch on top of feature embedding
     node_features_in = tf.keras.Input(shape=(AMT_NODES, FEATURE_DIM))
     adj_in = Input(tensor=ADJ_MATRIX_SPARSE, name="Adj. Matrix")
     q_values, f_embedding = base_model((node_features_in, adj_in))
     proxy = proxy_b((f_embedding, adj_in))
 
-    total_model = tf.keras.Model(inputs=[node_features_in, adj_in], outputs=[q_values, proxy])
+    full_model = tf.keras.Model(inputs=[node_features_in, adj_in], outputs=[q_values, proxy])
 
-    total_model.compile(
+    full_model.compile(
         loss={"mse": tf.keras.losses.MeanSquaredError()},
         optimizer=Adam(learning_rate=h_set["learning_rate"])
     )
-    total_model.summary()
+    full_model.summary()
 
     tb_callback = tf.keras.callbacks.TensorBoard(".")
-    tb_callback.set_model(total_model)
+    tb_callback.set_model(full_model)
 
-    return total_model
+    return full_model
 
 
 if __name__ == "__main__":
@@ -168,12 +168,12 @@ if __name__ == "__main__":
     # DEEP Q-NETWORK
     #################
     test_input = tf.random.normal((64, AMT_NODES, FEATURE_DIM))
-    model_1 = deep_q_network(.001, [64], 6)
-    model_1.summary()
-    tf.keras.utils.plot_model(model_1, "./deep_q_network.svg", dpi=None, rankdir="LR")
-    q_values_ = model_1((test_input, ADJ_MATRIX_SPARSE))
+    deep_q_net = deep_q_network(.001, [64], 6)
+    deep_q_net.summary()
+    tf.keras.utils.plot_model(deep_q_net, "./miscellaneous/deep_q_network.svg", dpi=None, rankdir="LR")
+    q_values_ = deep_q_net((test_input, ADJ_MATRIX_SPARSE))
     print(f"Q-values shape: {tf.shape(q_values_)}")
-    model_1.save_weights("./checkpoints/TEST_MODEL")
+    deep_q_net.save_weights("./miscellaneous/test_q_net")
 
     h_set_ = {
         "name": f"TEST",
@@ -190,22 +190,21 @@ if __name__ == "__main__":
     ###############
     feature_dim_ = 10  # model_1.get_layer("feature_embedding").output.shape[2]
     test_input_2 = tf.random.normal((64, AMT_NODES, feature_dim_))
-    model_2 = proxy_branch(
+    proxy_b_ = proxy_branch(
         lr=h_set_["learning_rate"],
         graph_layers=h_set_["expl_graph_layers"],
         feature_dim=feature_dim_
     )
-    model_2.summary()
-    tf.keras.utils.plot_model(model_2, "./explainer_network.svg", dpi=None, rankdir="LR")
-    proxy_ = model_2((test_input_2, ADJ_MATRIX_SPARSE))
+    proxy_b_.summary()
+    tf.keras.utils.plot_model(proxy_b_, "./miscellaneous/proxy_branch.svg", dpi=None, rankdir="LR")
+    proxy_ = proxy_b_((test_input_2, ADJ_MATRIX_SPARSE))
     print(f"Proxy shape: {tf.shape(proxy_)}")
 
     ###################
     # COMBINED NETWORK
     ###################
-    model_3 = load_agent("double_q_learning/checkpoints/TEST_MODEL", h_set_)
+    model_3 = load_agent("./miscellaneous/test_q_net", h_set_)
     model_3.summary()
-    tf.keras.utils.plot_model(model_3, "./load_agent.svg", dpi=None, rankdir="LR")
+    tf.keras.utils.plot_model(model_3, "./miscellaneous/full_net.svg", dpi=None, rankdir="LR")
     q_values_, proxy_ = model_3((test_input, ADJ_MATRIX_SPARSE))
     print(f"Q-values shape: {tf.shape(q_values_)}; Proxy shape: {tf.shape(proxy_)}")
-    model_3.save_weights("./checkpoints/TEST_EXPL_MODEL")
