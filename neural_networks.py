@@ -1,3 +1,19 @@
+"""Define and test neural network definitions
+
+This script defines and illustrates the network architectures used throughout
+the main experiment.
+
+Therefore, this script requires the following libraries:
+    - tensorflow
+    - spektral
+    - pydot
+
+The script contains the following functions:
+    - proxy_branch: Neural network that predicts proxies for given observations
+    - deep_q_network: Deep q-network that simultaneously predicts its own inputs
+    - load_agent: Loads a trained agent and adds a proxy branch
+"""
+
 from keras.layers import Activation
 from spektral.layers import GeneralConv, DiffPool
 from tensorflow.keras.layers import Dense, Input, Reshape
@@ -11,11 +27,21 @@ import tensorflow as tf
 def proxy_branch(lr, graph_layers, amt_nodes=AMT_NODES, feature_dim=FEATURE_DIM):
     """Neural network that predicts proxies for given observations
 
-    :param lr: Learning rate
-    :param graph_layers: The shapes of the general graph convolutions applied to the input
-    :param amt_nodes: The amount of nodes within a graph
-    :param feature_dim: The amount of features per node
-    :return: A configured proxy branch
+    Parameters
+    ----------
+    lr: float
+        Learning rate
+    graph_layers: list
+        The shapes of the general graph convolutions applied to the input
+    amt_nodes: int
+        The amount of nodes within a graph
+    feature_dim: int
+        The amount of features per node
+
+    Returns
+    -------
+    tf.keras.Model
+        A configured proxy branch
     """
 
     node_features_in = Input(shape=(amt_nodes, feature_dim), name="feature_embedding")
@@ -56,10 +82,19 @@ def proxy_branch(lr, graph_layers, amt_nodes=AMT_NODES, feature_dim=FEATURE_DIM)
 def deep_q_network(lr, graph_layers, amt_actions=6):
     """Deep q-network that simultaneously predicts its own inputs
 
-    :param lr: Learning rate
-    :param graph_layers: The shapes of the general graph convolutions applied to the input
-    :param amt_actions: The amount of possible actions
-    :return: A configured proxy branch and deep q-network
+    Parameters
+    ----------
+    lr: float
+        Learning rate
+    graph_layers: list
+        The shapes of the general graph convolutions applied to the input
+    amt_actions: int
+        The amount of possible actions
+
+    Returns
+    -------
+    tf.keras.Model
+        A configured proxy branch and deep q-network
     """
     node_features_in = Input(shape=(AMT_NODES, FEATURE_DIM), name="Feature Matrix")
     adj_matrix_in = Input(tensor=ADJ_MATRIX_SPARSE, name="Adj. Matrix")
@@ -114,15 +149,24 @@ def deep_q_network(lr, graph_layers, amt_actions=6):
 
 
 def load_agent(load_path, h_set):
-    """Loads a trained agent and adds a proxy branch.
+    """Loads a trained agent and adds a proxy branch
 
     Furthermore, it freezes the q-value prediction branch s.t. only the proxy branch will
     be trained.
 
-    :param load_path: The path from where the base model will be loaded
-    :param h_set: The hyperparameter set that fits to the base model and tells how many
-                  additional graph convolutions shall be added
-    :return: A neural network with added proxy branch
+    Parameters
+    ----------
+
+    load_path: str
+        The path from where the base model will be loaded
+    h_set: dict
+        The hyperparameter set that fits to the base model and tells how many additional graph convolutions shall be
+        added
+
+    Returns
+    -------
+    tf.keras.Model
+        A neural network with added proxy branch
     """
 
     # Load trained agent

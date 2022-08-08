@@ -1,3 +1,23 @@
+"""An interactive script that shows you how the preprocessing connects to the actual observations
+
+It further hard-codes the adjacency matrix used to describe the graph. It only needs to be hard-coded
+once as it never changes.
+
+For its purposes this script requires the following libraries:
+    - matplotlib
+    - gym
+    - numpy
+    - networkx
+    - tensorflow
+
+It includes the following functions:
+    - preprocess: Computes the node-features matrix
+    - colorize: Computes a color map for a graph
+    - draw_heat_graph: Draws a heat graph representation for a given explanation
+    - action_num_to_str: Converts a number to the string description of the corresponding action
+    - draw_discrete_graph: Draws the graph representation for a given observation
+"""
+
 from matplotlib import pyplot as plt
 
 import gym
@@ -29,7 +49,7 @@ for node_to in range(ADJ_MATRIX.shape[0]):
 ADJ_MATRIX = tf.constant(ADJ_MATRIX)
 ADJ_MATRIX = tf.cast(ADJ_MATRIX, tf.float32)
 ADJ_MATRIX_SPARSE = tf.sparse.from_dense(ADJ_MATRIX)
-FEATURE_DIM = 4  # previously 10
+FEATURE_DIM = 4
 
 #########################
 # NODE FEATURE ENCODINGS
@@ -46,7 +66,7 @@ taxi_passenger_dest_picked = [0, 0, 1, 1]
 
 
 def preprocess(env_, observation, return_tf_tensor=True):
-    """Computes the node-features matrix.
+    """Computes the node-features matrix
 
     The node features are encoded in binary in a 4-dimensional feature vector [w,x,y,z]
 
@@ -59,10 +79,19 @@ def preprocess(env_, observation, return_tf_tensor=True):
           That is, we only need to compute the node-features matrix for each
           observation.
 
-    :param env_: The Taxi-V3 environment.
-    :param observation: The observation that shall be converted into a graph.
-    :param return_tf_tensor: If False, numpy array is returned instead.
-    :return: The node-features matrix for the given observation.
+    Parameters
+    ----------
+    env_: AdvancedTaxiEnv
+        The Taxi-V3 environment
+    observation: np.ndarray
+        The observation that shall be converted into a graph
+    return_tf_tensor: bool
+        If False, numpy array is returned instead
+
+    Returns
+    -------
+    np.ndarray
+        The node-features matrix for the given observation
     """
 
     taxi_row, taxi_col, pass_loc_raw, dest_idx = env_.decode(observation)
@@ -132,7 +161,18 @@ def preprocess(env_, observation, return_tf_tensor=True):
 
 
 def colorize(graph):
-    """Computes a color map for a graph."""
+    """Computes a color map for a graph
+
+    Parameters
+    ----------
+    graph: nx.Graph
+        A graph-representation of the observation
+
+    Returns
+    -------
+    list
+        A colormap for the nodes in the given graph
+    """
     color_map_ = []
     for node_ in graph.nodes.data():
         if np.array_equal(node_[1]["feature_vec"], passenger_taxi_picked):
@@ -160,15 +200,22 @@ def colorize(graph):
 
 
 def draw_heat_graph(explanation, fid=None, action_=None, title=None, show=True):
-    """Draws a heat graph representation for a given explanation.
+    """Draws a heat graph representation for a given explanation
 
     The color ('heat') of a node is determined by its L2-norm.
 
-    :param explanation: Output of an explainer network (a continuous mask).
-    :param fid: The fidelity of that explanation
-    :param action_: Chosen action for this explanation
-    :param title: The title of the plot
-    :param show: Show the image
+    Parameters
+    ----------
+    explanation: np.ndarray
+        Output of an explainer network (a continuous mask).
+    fid: float
+        The fidelity of that explanation
+    action_: int
+        Chosen action for this explanation
+    title: str
+        The title of the plot
+    show: boolean
+        Show the image
     """
 
     # Create graph
@@ -225,7 +272,18 @@ def draw_heat_graph(explanation, fid=None, action_=None, title=None, show=True):
 
 
 def action_num_to_str(action_):
-    """Converts a number to the string description of the corresponding action."""
+    """Converts a number to the string description of the corresponding action
+
+    Parameters
+    ----------
+    action_: int
+        The action you want to have a string-description for
+
+    Returns
+    -------
+    str:
+        A description for the given action
+    """
     if action_ == 0:
         return "move south"
     elif action_ == 1:
@@ -241,13 +299,20 @@ def action_num_to_str(action_):
 
 
 def draw_discrete_graph(explanation, fid=None, action_=None, title=None, show=True):
-    """Draws the graph representation for a given observation.
+    """Draws the graph representation for a given observation
 
-    :param explanation: Output of an explanation branch.
-    :param fid: The fidelity of that explanation
-    :param action_: Chosen action for this explanation
-    :param title: The title of the plot.
-    :param show: Show the image
+    Parameters
+    ----------
+    explanation: np.ndarray
+        Output of an explanation branch.
+    fid: float
+        The fidelity of that explanation
+    action_: int
+        Chosen action for this explanation
+    title: str
+        The title of the plot.
+    show: bool
+        Show the image
     """
 
     if tf.rank(explanation) > 2:
@@ -305,7 +370,7 @@ if __name__ == "__main__":
         pos={node_key: node_attr["pos"] for node_key, node_attr in G.nodes.data()},
         node_color=color_map
     )
-    plt.savefig("SampleObservation.svg", format="svg")
+    plt.savefig("./miscellaneous/SampleObservation.svg", format="svg")
     plt.show()
 
     while not stop:
