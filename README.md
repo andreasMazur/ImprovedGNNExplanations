@@ -1,10 +1,30 @@
 # Refined Zorro Explanations for Graph Neural Networks
 
-This repository contains the code for a project that belongs to the area of computing explanations for graph neural networks. I analyse and refine explanations for predictions from a deep Q-learning agent in the Taxi-v3 environment [2]. To be able to use this environment for my research topic, I convert the default integer observations to graph observations. This yields sparse feature matrices. 
+This repository contains the code for the paper:
 
-Naively using explanations given by Zorro [1] results in bad explanations because of the sparsity of the data. That is why I extend the deep Q-network with an explanation branch. I train the explanation branch while freezing all other weights by minimizing a fidelity value comparable to the widely known Fidelty-Minus evaluation metric. The size of the output of the explanation branch equals the size of the graph observation. However, this embedding is not sparse. Therefor, I am able to use Zorro in an improved way compared to naively applying it to the original graph observation.
+```
+@article{Mazur2022,
+  title={Improving Zorro Explanations for Sparse Observations with Dense Proxy Data},
+  author={Mazur, Andreas and Artelt, André and Hammer, Barbara},
+  journal={ESANN},
+  doi={https://doi.org/10.14428/esann/2022.ES2022-27},
+  pages={527-532},
+  year={2022},
+  publisher={i6doc.com}
+}
+```
 
-![](https://github.com/andreasMazur/RefinedGNNExplanations/blob/main/Experiment.gif)
+We analyse and refine explanations for predictions from a deep Q-learning agent in the Taxi-v3 environment [2].
+Default integer observations are converted to graph observations. However, those appear to containt sparse feature matrices.
+Naively applying Zorro [1] onto the sparse observations results in problematic explanations.
+That is why we extend the deep Q-network with a proxy branch.
+We train the proxy branch by minimizing a fidelity value comparable to the widely known Fidelty-Minus evaluation metric.
+Simultaneously we freeze the weights of the deep Q-network.
+The proxy branch outputs dense proxy data which we can use to substitute the sparse original observations.
+The explanations retrieved by applying Zorro onto the dense proxy appear to be better interpretable than the initially computed explanations
+for the sparse observations.
+
+<!-- ![](https://github.com/andreasMazur/RefinedGNNExplanations/blob/main/Experiment.gif) -->
 
 # Install
 
