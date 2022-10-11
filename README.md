@@ -15,13 +15,13 @@ This repository contains the code for the paper:
 ```
 
 We analyse and refine explanations for predictions from a deep Q-learning agent in the Taxi-v3 environment [2].
-Default integer observations are converted to graph observations. However, those appear to containt sparse feature matrices.
+Default integer observations are converted to graph observations. However, those appear to contain sparse feature matrices.
 Naively applying Zorro [1] onto the sparse observations results in problematic explanations.
 That is why we extend the deep Q-network with a proxy branch.
 We train the proxy branch by minimizing a fidelity value comparable to the widely known Fidelty-Minus evaluation metric.
 Simultaneously we freeze the weights of the deep Q-network.
 The proxy branch outputs dense proxy data which we can use to substitute the sparse original observations.
-The explanations retrieved by applying Zorro onto the dense proxy appear to be better interpretable than the initially computed explanations
+The explanations retrieved by applying Zorro on the dense proxy data appear to be better interpretable than the initially computed explanations
 for the sparse observations.
 
 <!-- ![](https://github.com/andreasMazur/RefinedGNNExplanations/blob/main/Experiment.gif) -->
